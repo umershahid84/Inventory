@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Stock Inventory</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <style>
 :root{--navy:#0f172a;--navy2:#1e293b;--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1d4ed8;--red:#dc2626;--redbg:#fef2f2;--redline:#fecaca;--green:#16a34a;--greenbg:#f0fdf4;--amber:#d97706;--amberbg:#fffbeb;--r:12px}
 *{box-sizing:border-box}
@@ -94,6 +96,19 @@ tr.low .meter i{background:var(--red)}
 .result .warn{display:inline-block;margin-top:8px;background:var(--red);color:#fff;border-radius:99px;padding:2px 12px;font-weight:700;font-size:12.5px}
 .hint{color:var(--mute);font-size:12.5px;padding:12px 20px;border-top:1px solid var(--line);background:#f8fafc}
 .hide{display:none!important}
+body:not(.is-admin) .adm{display:none!important}
+#auth{position:fixed;inset:0;background:var(--bg);z-index:50;display:grid;place-items:center;padding:16px;overflow:auto}
+.authbox{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:30px;width:100%;max-width:400px}
+.authbox .brand{color:var(--ink);padding:0 0 18px}
+.authbox h2{margin:0 0 4px;font-size:18px}.authbox p{color:var(--mute);margin:0 0 16px}
+.authbox .btn{width:100%;justify-content:center;margin-top:6px}
+.authbox .f{margin-bottom:12px}
+.autherr{color:var(--red);background:var(--redbg);border:1px solid var(--redline);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.authbox ol{padding-left:18px;color:#334155}.authbox code{background:#f1f5f9;padding:1px 5px;border-radius:5px;font-size:12px}
+#banner{margin:0 0 14px;padding:10px 14px;border-radius:10px;background:var(--amberbg);border:1px solid #fde68a;color:#92400e;font-weight:500}
+.who{font-size:12px;color:#94a3b8;word-break:break-all}.who b{display:block;color:#e2e8f0;font-weight:600;text-transform:capitalize}
+.who button{margin-top:8px;background:var(--navy2);color:#e2e8f0;border:0;border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer;width:100%}
+.who button:hover{background:#334155}
 .label{border:1px dashed #94a3b8;border-radius:8px;padding:10px;text-align:center;break-inside:avoid;background:#fff;color:#000}
 .label b{display:block;font-size:13px;margin-bottom:3px}
 .label small{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
@@ -135,21 +150,23 @@ tr.low .meter i{background:var(--red)}
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V3m0 0-4 4m4-4 4 4M4 21h16"/></symbol>
 </svg>
+<div id="auth"><div class="authbox" id="authBox"></div></div>
 <div class="app">
 <aside>
   <div class="brand"><div class="logo"><svg class="i" style="stroke:#fff"><use href="#i-box"/></svg></div><div>Stock Inventory<small>Barcode tracking</small></div></div>
   <nav id="nav">
     <button data-tab="scan" class="on"><svg class="i"><use href="#i-scan"/></svg>Scan out</button>
     <button data-tab="stock"><svg class="i"><use href="#i-layers"/></svg>Inventory</button>
-    <button data-tab="add"><svg class="i"><use href="#i-plus"/></svg>Add item</button>
-    <button data-tab="order"><svg class="i"><use href="#i-cart"/></svg>Order list <span id="lowBadge" class="badge hide">0</span></button>
+    <button data-tab="add" class="adm"><svg class="i"><use href="#i-plus"/></svg>Add item</button>
+    <button data-tab="order" class="adm"><svg class="i"><use href="#i-cart"/></svg>Order list <span id="lowBadge" class="badge hide">0</span></button>
     <button data-tab="log"><svg class="i"><use href="#i-clock"/></svg>History</button>
   </nav>
-  <div class="side-foot">Data is saved in this browser. Use Backup regularly.</div>
+  <div class="side-foot"><div class="who"><b id="whoRole"></b><span id="whoEmail"></span><button id="signOut">Sign out</button></div></div>
 </aside>
 <div class="main">
   <div class="top"><div><h1 id="pageTitle">Scan out</h1><p id="pageSub"></p></div><div id="scannerState" class="scanner hide">Scanner ready</div></div>
   <div class="content">
+    <div id="banner" class="hide" role="alert"></div>
     <div class="stats" id="stats"></div>
 
     <section id="tab-scan">
@@ -170,11 +187,10 @@ tr.low .meter i{background:var(--red)}
       <div class="card">
         <div class="hd">
           <div style="flex:1;min-width:220px;max-width:340px"><input id="filter" type="text" placeholder="Search by name or barcode…" aria-label="Search"></div>
-          <div class="acts">
+          <div class="acts adm">
             <button class="btn sec" id="printAllLabels"><svg class="i"><use href="#i-print"/></svg>Print all labels</button>
-            <button class="btn sec" id="exportBtn"><svg class="i"><use href="#i-down"/></svg>Backup</button>
-            <button class="btn sec" id="importBtn"><svg class="i"><use href="#i-up"/></svg>Restore</button>
-            <input type="file" id="importFile" accept=".json" class="hide">
+            <button class="btn sec" id="exportItems"><svg class="i"><use href="#i-down"/></svg>Export items (CSV)</button>
+            <button class="btn sec" id="exportLog"><svg class="i"><use href="#i-down"/></svg>Export history (CSV)</button>
           </div>
         </div>
         <div class="scroll" id="stockTable"></div>
@@ -230,31 +246,68 @@ function barcodeSVG(text,h){
 }
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ico=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+const $=id=>document.getElementById(id);
 
-// ---------- storage ----------
-const KEY="inventory.v1";
-let db;
-function load(){try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){db=null}
-  if(!db||!Array.isArray(db.items))db={items:[],log:[],next:1}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert("Could not save – browser storage is blocked or full.")}}
+// ---------- state ----------
+let sb=null,role=null,userEmail="",items=[],tab="scan";
 const isOut=i=>i.qty<=0;
 const isLow=i=>i.qty<=0||i.qty*4<=i.baseline;
-const byCode=c=>db.items.find(i=>i.barcode.toLowerCase()===c.toLowerCase());
-const fmt=t=>new Date(t).toLocaleString([], {dateStyle:"medium",timeStyle:"short"});
-function addLog(type,item,delta){db.log.unshift({t:Date.now(),type,name:item.name,barcode:item.barcode,delta,after:item.qty});db.log=db.log.slice(0,2000)}
+const fmt=t=>new Date(t).toLocaleString([],{dateStyle:"medium",timeStyle:"short"});
+const errText=e=>{const m=(e&&e.message)||String(e);return /fetch|network|Failed/i.test(m)?"Cannot reach the server. Check the internet connection and try again.":m};
+function banner(msg){const b=$("banner");b.textContent=msg||"";b.classList.toggle("hide",!msg)}
+
+// ---------- sign in ----------
+function authView(html){$("auth").classList.remove("hide");$("authBox").innerHTML=`<div class="brand"><div class="logo"><svg class="i" style="stroke:#fff"><use href="#i-box"/></svg></div><div>Stock Inventory<small style="color:#64748b">Barcode tracking</small></div></div>`+html}
+function hideAuth(){$("auth").classList.add("hide")}
+function showSetup(){authView(`<h2>Almost there</h2><p>The online database is not connected yet. Follow <b>SETUP.md</b> in the repository, then put your Supabase URL and key into <code>config.js</code>.</p>`)}
+function showLogin(msg,em){
+  authView(`<h2>Sign in</h2><p>Use the account your administrator created for you.</p>${msg?`<div class="autherr">${esc(msg)}</div>`:""}
+  <form id="loginForm"><div class="f"><label for="le">Email</label><input id="le" type="email" autocomplete="username" required value="${esc(em||"")}" style="height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;width:100%;font:inherit"></div>
+  <div class="f"><label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password" required style="height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;width:100%;font:inherit"></div>
+  <button class="btn" type="submit">Sign in</button></form>`);
+  $("loginForm").onsubmit=async e=>{
+    e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
+    try{const {data,error}=await sb.auth.signInWithPassword({email:$("le").value.trim(),password:$("lp").value});
+      if(error)throw error;await start(data.session)}
+    catch(x){showLogin(/invalid/i.test(x.message)?"Wrong email or password.":errText(x),$("le").value)}
+  };
+}
+$("signOut").onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+async function start(session){
+  userEmail=session.user.email;
+  const {data,error}=await sb.from("user_roles").select("role").maybeSingle();
+  if(error){authView(`<h2>Connection problem</h2><div class="autherr">${esc(errText(error))}</div><button class="btn" onclick="location.reload()">Try again</button>`);return}
+  if(!data){authView(`<h2>No access yet</h2><p>You are signed in as <b>${esc(userEmail)}</b>, but this account has not been given a role. Ask the administrator to add you.</p><button class="btn" id="noAccOut">Sign out</button>`);$("noAccOut").onclick=()=>$("signOut").click();return}
+  role=data.role;document.body.classList.toggle("is-admin",role==="admin");
+  $("whoRole").textContent=role==="admin"?"Administrator":"Scanner";$("whoEmail").textContent=userEmail;
+  hideAuth();await refreshItems();show("scan");
+  setInterval(()=>{if(!document.hidden)refreshItems().then(()=>{if(tab!=="scan")render()})},30000);
+}
+
+// ---------- data ----------
+async function refreshItems(){
+  const {data,error}=await sb.from("items").select("*").order("name");
+  if(error){banner("Connection problem – showing the last known stock. "+errText(error));return false}
+  items=data;banner("");updateBadge();renderStats();return true;
+}
+const byId=id=>items.find(i=>i.id===id);
+async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data}
 
 // ---------- tabs ----------
 const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Inventory","All items, barcodes and stock levels"],add:["Add item","Create new items or receive stock"],order:["Order list","Items that need to be reordered"],log:["History","Every scan, restock and correction"]};
-let tab="scan";
-function show(t){tab=t;document.querySelectorAll(".content>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
+function show(t){
+  if((t==="add"||t==="order")&&role!=="admin")t="scan";
+  tab=t;document.querySelectorAll(".content>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
-  document.getElementById("pageTitle").textContent=TITLES[t][0];document.getElementById("pageSub").textContent=TITLES[t][1];
-  document.getElementById("scannerState").classList.toggle("hide",t!=="scan");
-  render();if(t==="scan")focusScan()}
-document.getElementById("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
+  $("pageTitle").textContent=TITLES[t][0];$("pageSub").textContent=TITLES[t][1];
+  $("scannerState").classList.toggle("hide",t!=="scan");
+  render();refreshItems().then(ok=>{if(ok&&tab===t)render()});if(t==="scan")focusScan()}
+$("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
 
 // ---------- scan ----------
-const scanInput=document.getElementById("scanInput"),scanResult=document.getElementById("scanResult"),scState=document.getElementById("scannerState");
+const scanInput=$("scanInput"),scanResult=$("scanResult"),scState=$("scannerState");
+let scanQueue=Promise.resolve();
 function focusScan(){if(tab==="scan")scanInput.focus()}
 scanInput.addEventListener("focus",()=>{scState.classList.add("ready");scState.textContent="Scanner ready"});
 scanInput.addEventListener("blur",()=>{scState.classList.remove("ready");scState.textContent="Click the box to scan"});
@@ -262,123 +315,133 @@ document.addEventListener("click",e=>{if(tab==="scan"&&!e.target.closest("button
 scanInput.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;e.preventDefault();
   const c=scanInput.value.trim();scanInput.value="";if(!c)return;
-  const it=byCode(c);
-  if(!it){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Unknown barcode</div><div>${esc(c)}</div>`;return}
-  if(it.qty<=0){scanResult.className="result low";scanResult.innerHTML=`<div class="nm">${esc(it.name)}</div><div>Out of stock – nothing taken.</div>`;return}
-  it.qty-=1;addLog("take",it,-1);save();
-  const low=isLow(it);
-  scanResult.className="result "+(low?"low":"ok");
-  scanResult.innerHTML=`<div class="nm">${esc(it.name)} – 1 taken</div><div class="big">${it.qty}</div><div>remaining</div>${low?'<span class="warn">LOW STOCK – ORDER NEEDED</span>':""}`;
-  renderRecent();renderStats();updateBadge();
+  scanQueue=scanQueue.then(()=>takeOne(c));      // scans are processed one at a time, in order
 });
+async function takeOne(c){
+  let r;
+  try{r=await rpc("take_one",{p_barcode:c})}
+  catch(x){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Not recorded</div><div>${esc(errText(x))}</div><div>Scan again once the connection is back.</div>`;return}
+  if(r.status==="unknown"){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Unknown barcode</div><div>${esc(c)}</div>`;return}
+  if(r.status==="out"){scanResult.className="result low";scanResult.innerHTML=`<div class="nm">${esc(r.name)}</div><div>Out of stock – nothing taken.</div>`;return}
+  const low=r.qty<=0||r.qty*4<=r.baseline;
+  scanResult.className="result "+(low?"low":"ok");
+  scanResult.innerHTML=`<div class="nm">${esc(r.name)} – 1 taken</div><div class="big">${r.qty}</div><div>remaining</div>${low?'<span class="warn">LOW STOCK – ORDER NEEDED</span>':""}`;
+  await refreshItems();renderRecent();
+}
+async function renderRecent(){
+  const {data,error}=await sb.from("log").select("*").eq("type","take").order("id",{ascending:false}).limit(8);
+  if(error)return;
+  $("recent").innerHTML=data.length?`<table><thead><tr><th>When</th><th>Item</th><th>Barcode</th><th>By</th><th>Left</th></tr></thead><tbody>${data.map(l=>`<tr><td>${fmt(l.t)}</td><td class="name">${esc(l.name)}</td><td>${esc(l.barcode)}</td><td>${esc(l.by_email||"")}</td><td class="qty">${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No scans yet.");
+}
 
 // ---------- rendering ----------
 function status(i){return isOut(i)?'<span class="pill out">Out</span>':isLow(i)?'<span class="pill low">Low – order</span>':'<span class="pill ok">In stock</span>'}
-const empty=(m)=>`<div class="empty">${ico("box")}<div>${m}</div></div>`;
+const empty=m=>`<div class="empty">${ico("box")}<div>${m}</div></div>`;
 function renderStats(){
-  const units=db.items.reduce((a,i)=>a+i.qty,0),low=db.items.filter(i=>isLow(i)).length,out=db.items.filter(isOut).length;
+  const units=items.reduce((a,i)=>a+i.qty,0),low=items.filter(isLow).length,out=items.filter(isOut).length;
   const s=(cls,ic,n,l)=>`<div class="stat ${cls}"><div class="ic">${ico(ic)}</div><div><b>${n}</b><span>${l}</span></div></div>`;
-  document.getElementById("stats").innerHTML=s("","layers",db.items.length,"Items")+s("green","box",units.toLocaleString(),"Units in stock")+s(low?"red":"green",low?"alert":"check",low,"Low stock")+s(out?"amber":"green","cart",out,"Out of stock");
-}
-function renderRecent(){
-  const rows=db.log.filter(l=>l.type==="take").slice(0,8);
-  document.getElementById("recent").innerHTML=rows.length?`<table><thead><tr><th>When</th><th>Item</th><th>Barcode</th><th>Left</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${fmt(l.t)}</td><td class="name">${esc(l.name)}</td><td>${esc(l.barcode)}</td><td class="qty">${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No scans yet.");
+  $("stats").innerHTML=s("","layers",items.length,"Items")+s("green","box",units.toLocaleString(),"Units in stock")+s(low?"red":"green",low?"alert":"check",low,"Low stock")+s(out?"amber":"green","cart",out,"Out of stock");
 }
 function renderStock(){
-  const f=document.getElementById("filter").value.toLowerCase();
-  const items=db.items.filter(i=>!f||i.name.toLowerCase().includes(f)||i.barcode.toLowerCase().includes(f));
-  document.getElementById("stockTable").innerHTML=items.length?`<table><thead><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Status</th><th></th></tr></thead><tbody>${items.map(i=>{
+  const f=$("filter").value.toLowerCase();
+  const list=items.filter(i=>!f||i.name.toLowerCase().includes(f)||i.barcode.toLowerCase().includes(f));
+  $("stockTable").innerHTML=list.length?`<table><thead><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Status</th><th class="adm"></th></tr></thead><tbody>${list.map(i=>{
     const pct=i.baseline>0?Math.max(0,Math.min(100,i.qty/i.baseline*100)):0;
     return `<tr class="${isLow(i)?"low":""}"><td class="name">${esc(i.name)}</td>
   <td class="bc">${barcodeSVG(i.barcode,34)}<small>${esc(i.barcode)}</small></td>
   <td><span class="qty">${i.qty}</span> <span style="color:var(--mute)">/ ${i.baseline}</span><div class="meter"><i style="width:${pct}%"></i></div></td>
   <td>${status(i)}</td>
-  <td><div class="acts"><button class="btn sm" data-a="recv" data-id="${i.id}">+ Stock</button>
+  <td class="adm"><div class="acts"><button class="btn sm" data-a="recv" data-id="${i.id}">+ Stock</button>
   <button class="btn sm sec" data-a="label" data-id="${i.id}">Label</button>
   <button class="btn sm sec" data-a="rename" data-id="${i.id}">Rename</button>
   <button class="btn sm sec" data-a="fix" data-id="${i.id}">Correct</button>
-  <button class="btn sm danger" data-a="del" data-id="${i.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table><div class="hint">Bar = stock vs. total when last added. Items turn red at ¼ of the total.</div>`:empty(db.items.length?"No items match your search.":"No items yet – go to “Add item” to create your first one.");
+  <button class="btn sm danger" data-a="del" data-id="${i.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table><div class="hint">Bar = stock vs. total when last added. Items turn red at ¼ of the total.</div>`:empty(items.length?"No items match your search.":"No items yet – go to “Add item” to create your first one.");
 }
-function lowItems(){return db.items.filter(isLow).sort((a,b)=>a.qty/(a.baseline||1)-b.qty/(b.baseline||1))}
-function suggest(i){return Math.max(i.baseline-i.qty,1)}
-function renderOrder(){
-  const l=lowItems();
-  document.getElementById("orderTable").innerHTML=l.length?orderTable(l):empty("Nothing needs ordering right now.");
-}
+function lowItems(){return items.filter(isLow).sort((a,b)=>a.qty/(a.baseline||1)-b.qty/(b.baseline||1))}
+const suggest=i=>Math.max(i.baseline-i.qty,1);
 function orderTable(l){return `<table><thead><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total</th><th>Suggested order qty</th></tr></thead><tbody>${l.map(i=>`<tr><td class="name">${esc(i.name)}</td><td>${esc(i.barcode)}</td><td>${i.qty}${isOut(i)?" (OUT)":""}</td><td>${i.baseline}</td><td><b>${suggest(i)}</b></td></tr>`).join("")}</tbody></table>`}
-function renderLog(){
-  const tl={take:"Taken","new item":"New item",restock:"Restock",correction:"Correction"};
-  document.getElementById("logTable").innerHTML=db.log.length?`<table><thead><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th></tr></thead><tbody>${db.log.slice(0,300).map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(tl[l.type]||l.type)}</td><td class="name">${esc(l.name)}</td><td style="color:${l.delta<0?"var(--red)":"var(--green)"};font-weight:600">${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No activity yet.");
+function renderOrder(){const l=lowItems();$("orderTable").innerHTML=l.length?orderTable(l):empty("Nothing needs ordering right now.")}
+const LOGTYPES={take:"Taken","new item":"New item",restock:"Restock",correction:"Correction",deleted:"Deleted"};
+async function renderLog(){
+  const {data,error}=await sb.from("log").select("*").order("id",{ascending:false}).limit(300);
+  if(error){banner(errText(error));return}
+  $("logTable").innerHTML=data.length?`<table><thead><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th><th>By</th></tr></thead><tbody>${data.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(LOGTYPES[l.type]||l.type)}</td><td class="name">${esc(l.name||"")}</td><td style="color:${l.delta<0?"var(--red)":"var(--green)"};font-weight:600">${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td><td>${esc(l.by_email||"")}</td></tr>`).join("")}</tbody></table>`:empty("No activity yet.");
 }
-function updateBadge(){const n=lowItems().length,b=document.getElementById("lowBadge");b.textContent=n;b.classList.toggle("hide",!n)}
+function updateBadge(){const n=lowItems().length,b=$("lowBadge");b.textContent=n;b.classList.toggle("hide",!n)}
 function render(){
-  document.getElementById("savedNames").innerHTML=db.items.map(i=>`<option value="${esc(i.name)}">`).join("");
+  $("savedNames").innerHTML=items.map(i=>`<option value="${esc(i.name)}">`).join("");
   updateBadge();renderStats();
   if(tab==="scan")renderRecent();else if(tab==="stock")renderStock();else if(tab==="order")renderOrder();else if(tab==="log")renderLog();
 }
-document.getElementById("filter").oninput=renderStock;
+$("filter").oninput=renderStock;
 
-// ---------- add / receive ----------
-document.getElementById("addForm").onsubmit=e=>{
+// ---------- add / receive (admin) ----------
+$("addForm").onsubmit=async e=>{
   e.preventDefault();
-  const name=document.getElementById("addName").value.trim().replace(/\s+/g," ");
-  const qty=parseInt(document.getElementById("addQty").value,10);
+  const name=$("addName").value.trim().replace(/\s+/g," "),qty=parseInt($("addQty").value,10);
   if(!name||!(qty>=0))return;
-  let it=db.items.find(i=>i.name.toLowerCase()===name.toLowerCase()),msg;
-  if(it){it.qty+=qty;it.baseline=it.qty;addLog("restock",it,qty);msg=`Added ${qty} to <b>${esc(it.name)}</b>. Now in stock: ${it.qty}.`}
-  else{
-    const barcode="INV-"+String(db.next++).padStart(5,"0");
-    it={id:"i"+Date.now()+Math.random().toString(36).slice(2,6),name,barcode,qty,baseline:qty,created:Date.now()};
-    db.items.push(it);addLog("new item",it,qty);msg=`Created <b>${esc(it.name)}</b> with ${qty} in stock.`;
-  }
-  save();
-  document.getElementById("addResult").innerHTML=`<div class="card"><div class="bd success"><div class="t"><div class="pill ok" style="margin-bottom:8px">Saved</div><p style="margin:0 0 12px">${msg}</p><button class="btn sec" id="printNew">${ico("print")}Print this label</button></div><div class="label" style="width:270px"><b>${esc(it.name)}</b>${barcodeSVG(it.barcode,60)}<small>${esc(it.barcode)}</small></div></div></div>`;
-  document.getElementById("printNew").onclick=()=>printLabels([it]);
-  e.target.reset();document.getElementById("addQty").value=1;render();document.getElementById("addName").focus();
+  const btn=e.target.querySelector("button");btn.disabled=true;
+  try{
+    const existed=items.some(i=>i.name.toLowerCase()===name.toLowerCase());
+    const it=await rpc("add_stock",{p_name:name,p_qty:qty});
+    const msg=existed?`Added ${qty} to <b>${esc(it.name)}</b>. Now in stock: ${it.qty}.`:`Created <b>${esc(it.name)}</b> with ${it.qty} in stock.`;
+    $("addResult").innerHTML=`<div class="card"><div class="bd success"><div class="t"><div class="pill ok" style="margin-bottom:8px">Saved to the database</div><p style="margin:0 0 12px">${msg}</p><button class="btn sec" id="printNew">${ico("print")}Print this label</button></div><div class="label" style="width:270px"><b>${esc(it.name)}</b>${barcodeSVG(it.barcode,60)}<small>${esc(it.barcode)}</small></div></div></div>`;
+    $("printNew").onclick=()=>printLabels([it]);
+    e.target.reset();$("addQty").value=1;await refreshItems();render();$("addName").focus();
+  }catch(x){banner("Not saved: "+errText(x))}
+  btn.disabled=false;
 };
 
-// ---------- item actions ----------
-document.getElementById("stockTable").onclick=e=>{
+// ---------- item actions (admin) ----------
+$("stockTable").onclick=async e=>{
   const b=e.target.closest("button[data-a]");if(!b)return;
-  const it=db.items.find(i=>i.id===b.dataset.id);if(!it)return;
+  const it=byId(b.dataset.id);if(!it)return;
   const a=b.dataset.a;
-  if(a==="recv"){const n=parseInt(prompt(`How many "${it.name}" were received?`,"1"),10);
-    if(n>0){it.qty+=n;it.baseline=it.qty;addLog("restock",it,n);save();render()}}
-  else if(a==="label")printLabels([it]);
-  else if(a==="rename"){const n=(prompt("New name:",it.name)||"").trim();
-    if(n&&!db.items.some(x=>x!==it&&x.name.toLowerCase()===n.toLowerCase())){it.name=n;save();render()}}
-  else if(a==="fix"){const n=parseInt(prompt(`Correct the stock count for "${it.name}" (currently ${it.qty}):`,it.qty),10);
-    if(n>=0){const d=n-it.qty;it.qty=n;if(n>it.baseline)it.baseline=n;addLog("correction",it,d);save();render()}}
-  else if(a==="del"&&confirm(`Delete "${it.name}" and its barcode? This cannot be undone.`)){
-    db.items=db.items.filter(x=>x!==it);save();render()}
+  try{
+    if(a==="recv"){const n=parseInt(prompt(`How many "${it.name}" were received?`,"1"),10);if(n>0)await rpc("add_stock",{p_name:it.name,p_qty:n});else return}
+    else if(a==="label")return printLabels([it]);
+    else if(a==="rename"){const n=(prompt("New name:",it.name)||"").trim();if(!n||n===it.name)return;await rpc("rename_item",{p_id:it.id,p_name:n})}
+    else if(a==="fix"){const n=parseInt(prompt(`Correct the stock count for "${it.name}" (currently ${it.qty}):`,it.qty),10);if(!(n>=0))return;await rpc("correct_qty",{p_id:it.id,p_qty:n})}
+    else if(a==="del"){if(!confirm(`Delete "${it.name}" and its barcode? This cannot be undone.`))return;await rpc("delete_item",{p_id:it.id})}
+    await refreshItems();render();
+  }catch(x){banner("Not saved: "+(/duplicate|unique/i.test(x.message)?"an item with that name already exists.":errText(x)))}
 };
 
 // ---------- printing ----------
-function doPrint(html){document.getElementById("printArea").innerHTML=html;setTimeout(()=>window.print(),50)}
+function doPrint(html){$("printArea").innerHTML=html;setTimeout(()=>window.print(),50)}
 function printLabels(list){
   if(!list.length)return alert("No items to print.");
   doPrint(`<div class="labels">${list.map(i=>`<div class="label"><b>${esc(i.name)}</b>${barcodeSVG(i.barcode,60)}<small>${esc(i.barcode)}</small></div>`).join("")}</div>`);
 }
-document.getElementById("printAllLabels").onclick=()=>printLabels(db.items);
-document.getElementById("printOrder").onclick=()=>{
-  const l=lowItems();if(!l.length)return alert("Nothing needs ordering right now.");
+$("printAllLabels").onclick=()=>printLabels(items);
+$("printOrder").onclick=async()=>{
+  await refreshItems();const l=lowItems();if(!l.length)return alert("Nothing needs ordering right now.");
   doPrint(`<h1 style="font-size:20px;font-family:sans-serif">Order list</h1><p style="font-family:sans-serif">${new Date().toLocaleString()} – ${l.length} item(s) at or below ¼ of total stock</p>${orderTable(l)}<p style="margin-top:36px;font-family:sans-serif">Approved by: ____________________ &nbsp; Date: ____________</p>`);
 };
 
-// ---------- backup ----------
-document.getElementById("exportBtn").onclick=()=>{
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:"application/json"}));
-  a.download="inventory-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)};
-document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
-document.getElementById("importFile").onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{const d=JSON.parse(await f.text());if(!Array.isArray(d.items))throw 0;
-    if(confirm(`Replace current data with the backup (${d.items.length} items)?`)){db={items:d.items,log:d.log||[],next:d.next||d.items.length+1};save();render()}}
-  catch(_){alert("That file is not a valid inventory backup.")}
-  e.target.value="";
+// ---------- CSV export (extra copy you can keep) ----------
+function download(name,rows,cols){
+  const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const csv="﻿"+[cols.map(c=>q(c[1])).join(","),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(","))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=`${name}-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
+}
+$("exportItems").onclick=async()=>{await refreshItems();download("inventory-items",items,[["name","Item"],["barcode","Barcode"],["qty","In stock"],["baseline","Total"],["created_at","Created"]])};
+$("exportLog").onclick=async()=>{
+  let all=[],from=0;
+  for(;;){const {data,error}=await sb.from("log").select("*").order("id").range(from,from+999);
+    if(error)return banner(errText(error));all=all.concat(data);if(data.length<1000)break;from+=1000}
+  download("inventory-history",all,[["t","When"],["type","Action"],["name","Item"],["barcode","Barcode"],["delta","Change"],["after","Qty after"],["by_email","By"]]);
 };
 
-load();show("scan");
+// ---------- start ----------
+(async function init(){
+  const cfg=window.INVENTORY_CONFIG||{};
+  if(!window.supabase||!cfg.SUPABASE_URL||/YOUR-/.test(cfg.SUPABASE_URL+cfg.SUPABASE_ANON_KEY)){showSetup();return}
+  sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
+  const {data:{session}}=await sb.auth.getSession();
+  if(session)await start(session);else showLogin();
+})();
 </script>
 </body>
 </html>
