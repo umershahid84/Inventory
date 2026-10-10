@@ -3,129 +3,215 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Inventory</title>
+<title>Stock Inventory</title>
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--ink:#1c2230;--mute:#667085;--line:#e3e6ec;--brand:#1f5eff;--red:#d92d20;--redbg:#fee4e2;--green:#067647;--greenbg:#d1fadf;--amber:#b54708;--amberbg:#fef0c7}
-@media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b2029;--ink:#eef0f4;--mute:#98a2b3;--line:#2c3340;--brand:#6690ff;--red:#ff6b61;--redbg:#4a1d1a;--green:#47cd89;--greenbg:#12372a;--amber:#fdb022;--amberbg:#4a3410}}
+:root{--navy:#0f172a;--navy2:#1e293b;--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand2:#1d4ed8;--red:#dc2626;--redbg:#fef2f2;--redline:#fecaca;--green:#16a34a;--greenbg:#f0fdf4;--amber:#d97706;--amberbg:#fffbeb;--r:12px}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
-header h1{font-size:18px;margin:0 12px 0 0}
-nav{display:flex;gap:6px;flex-wrap:wrap}
-nav button{background:none;border:0;padding:8px 14px;border-radius:8px;font:inherit;color:var(--mute);cursor:pointer}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.app{display:flex;min-height:100%}
+aside{width:236px;background:var(--navy);color:#cbd5e1;padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex:none}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:16px;padding:4px 10px 22px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:grid;place-items:center}
+.brand small{display:block;font-weight:400;font-size:11px;color:#94a3b8;margin-top:-2px}
+nav{display:flex;flex-direction:column;gap:3px}
+nav button{display:flex;align-items:center;gap:11px;background:none;border:0;color:inherit;font:inherit;font-weight:500;padding:10px 12px;border-radius:9px;cursor:pointer;text-align:left}
+nav button:hover{background:var(--navy2);color:#fff}
 nav button.on{background:var(--brand);color:#fff}
-nav .badge{background:var(--red);color:#fff;border-radius:99px;padding:0 7px;font-size:12px;margin-left:6px}
-main{max-width:1000px;margin:0 auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
-h2{margin:0 0 12px;font-size:17px}
-input,button,select{font:inherit}
-input[type=text],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
-label{display:block;font-size:13px;color:var(--mute);margin:0 0 4px}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
-.row>div{flex:1;min-width:160px}
-.btn{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
-.btn.sec{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
-.btn.sm{padding:4px 10px;font-size:13px}
-.btn.danger{background:var(--red)}
-table{width:100%;border-collapse:collapse}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
-tr.low td{background:var(--redbg)}
-tr.low td.q{color:var(--red);font-weight:700}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
-.pill.ok{background:var(--greenbg);color:var(--green)}
-.pill.low{background:var(--red);color:#fff}
-.pill.out{background:var(--ink);color:var(--bg)}
-.scanbox{font-size:26px;padding:16px!important;text-align:center;letter-spacing:.05em}
-.result{margin-top:14px;padding:18px;border-radius:12px;text-align:center;font-size:18px;display:none}
-.result.ok{background:var(--greenbg);color:var(--green);display:block}
-.result.low{background:var(--redbg);color:var(--red);display:block}
-.result.err{background:var(--amberbg);color:var(--amber);display:block}
-.result .big{font-size:44px;font-weight:700;line-height:1.1}
-.mute{color:var(--mute)}
-.acts{display:flex;gap:6px;flex-wrap:wrap}
-.bc svg{display:block;max-width:100%}
-.hide{display:none!important}
+.badge{margin-left:auto;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;padding:1px 8px}
+.side-foot{margin-top:auto;font-size:12px;color:#64748b;padding:0 10px}
+.main{flex:1;min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 32px 6px}
+.top h1{margin:0;font-size:22px;letter-spacing:-.01em}
+.top p{margin:2px 0 0;color:var(--mute)}
+.content{padding:16px 32px 40px;max-width:1180px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.stat .ic{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:#eff6ff;color:var(--brand)}
+.stat.red .ic{background:var(--redbg);color:var(--red)}
+.stat.amber .ic{background:var(--amberbg);color:var(--amber)}
+.stat.green .ic{background:var(--greenbg);color:var(--green)}
+.stat b{display:block;font-size:24px;line-height:1.1;letter-spacing:-.02em}
+.stat span{color:var(--mute);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(15,23,42,.04);margin-bottom:18px;overflow:hidden}
+.card .hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--line)}
+.card .hd h2{margin:0;font-size:15px}
+.card .hd p{margin:2px 0 0;color:var(--mute);font-size:13px}
+.card .bd{padding:20px}
 .scroll{overflow-x:auto}
-#printArea{display:none}
-.label{border:1px dashed #999;padding:8px;text-align:center;break-inside:avoid;background:#fff;color:#000}
-.label b{display:block;font-size:13px;margin-bottom:2px}
+input[type=text],input[type=number]{height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:var(--ink);font:inherit;width:100%;transition:.15s}
+input:focus{outline:0;border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+label{display:block;font-size:12.5px;font-weight:600;color:#334155;margin:0 0 5px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+.row>div{flex:1;min-width:160px}
+.btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:9px;border:1px solid var(--brand);background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--brand2)}
+.btn.sec{background:#fff;color:#334155;border-color:#cbd5e1}
+.btn.sec:hover{background:#f8fafc}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px;border-radius:7px}
+.btn.danger{background:#fff;color:var(--red);border-color:var(--redline)}
+.btn.danger:hover{background:var(--redbg)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);font-weight:600;background:#f8fafc;text-align:left;padding:10px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fafcff}
+tr.low td{background:var(--redbg)}
+tr.low:hover td{background:#fee2e2}
+tr.low td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+.name{font-weight:600}
+.qty{font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+tr.low .qty{color:var(--red)}
+.meter{width:110px;height:6px;border-radius:9px;background:#e2e8f0;overflow:hidden;margin-top:5px;position:relative}
+.meter i{display:block;height:100%;background:var(--green);border-radius:9px}
+tr.low .meter i{background:var(--red)}
+.pill{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.pill.ok{background:#dcfce7;color:#166534}
+.pill.low{background:#fee2e2;color:#991b1b}
+.pill.out{background:var(--ink);color:#fff}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.bc svg{display:block;max-width:100%;height:34px}
+.bc small{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--mute);font-size:11px}
+.empty{text-align:center;color:var(--mute);padding:36px 16px}
+.empty svg{width:34px;height:34px;opacity:.5;margin-bottom:6px}
+.scanner{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:99px;background:#fef3c7;color:#92400e}
+.scanner.ready{background:#dcfce7;color:#166534}
+.scanner::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.scanpanel{text-align:center;padding:34px 20px 26px;background:linear-gradient(180deg,#f8fafc,#fff)}
+.scanpanel .ic{width:64px;height:64px;border-radius:16px;background:#eff6ff;color:var(--brand);display:grid;place-items:center;margin:0 auto 12px}
+.scanpanel .ic svg{width:32px;height:32px}
+.scanpanel h2{margin:0 0 4px;font-size:18px}
+.scanpanel p{margin:0 0 18px;color:var(--mute)}
+.scanbox{max-width:480px;margin:0 auto;height:56px!important;font-size:22px!important;text-align:center;letter-spacing:.08em;font-family:ui-monospace,Menlo,Consolas,monospace;border:2px solid #cbd5e1!important}
+.result{max-width:480px;margin:18px auto 0;padding:18px;border-radius:var(--r);display:none;border:1px solid}
+.result.ok{display:block;background:var(--greenbg);border-color:#bbf7d0;color:#166534}
+.result.low{display:block;background:var(--redbg);border-color:var(--redline);color:#991b1b}
+.result.err{display:block;background:var(--amberbg);border-color:#fde68a;color:#92400e}
+.result .nm{font-size:16px;font-weight:700}
+.result .big{font-size:56px;font-weight:800;line-height:1.05;letter-spacing:-.03em}
+.result .warn{display:inline-block;margin-top:8px;background:var(--red);color:#fff;border-radius:99px;padding:2px 12px;font-weight:700;font-size:12.5px}
+.hint{color:var(--mute);font-size:12.5px;padding:12px 20px;border-top:1px solid var(--line);background:#f8fafc}
+.hide{display:none!important}
+.label{border:1px dashed #94a3b8;border-radius:8px;padding:10px;text-align:center;break-inside:avoid;background:#fff;color:#000}
+.label b{display:block;font-size:13px;margin-bottom:3px}
+.label small{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .labels{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.label svg{max-width:100%}
+.success{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.success .t{flex:1;min-width:200px}
+#printArea{display:none}
+@media (max-width:860px){
+  .app{flex-direction:column}
+  aside{width:auto;height:auto;position:static;flex-direction:row;align-items:center;flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .brand{padding:0 8px 0 0}.brand small,.side-foot{display:none}
+  nav{flex-direction:row;flex-wrap:wrap}
+  nav button{padding:8px 10px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .top,.content{padding-left:16px;padding-right:16px}
+}
 @media print{
   body{background:#fff;color:#000}
-  header,main{display:none!important}
+  .app{display:none!important}
   #printArea{display:block}
   #printArea table{color:#000}
-  #printArea th,#printArea td{border-bottom:1px solid #999;color:#000}
+  #printArea th{background:#eee;color:#000}
+  #printArea td,#printArea th{border-bottom:1px solid #999;color:#000;background:#fff}
 }
 </style>
 </head>
 <body>
-<header>
-  <h1>📦 Inventory</h1>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8M18 8v8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v5M12 18v.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V3m0 0-4 4m4-4 4 4M4 21h16"/></symbol>
+</svg>
+<div class="app">
+<aside>
+  <div class="brand"><div class="logo"><svg class="i" style="stroke:#fff"><use href="#i-box"/></svg></div><div>Stock Inventory<small>Barcode tracking</small></div></div>
   <nav id="nav">
-    <button data-tab="scan" class="on">Scan out</button>
-    <button data-tab="stock">Inventory</button>
-    <button data-tab="add">Add item</button>
-    <button data-tab="order">Order list <span id="lowBadge" class="badge hide">0</span></button>
-    <button data-tab="log">History</button>
+    <button data-tab="scan" class="on"><svg class="i"><use href="#i-scan"/></svg>Scan out</button>
+    <button data-tab="stock"><svg class="i"><use href="#i-layers"/></svg>Inventory</button>
+    <button data-tab="add"><svg class="i"><use href="#i-plus"/></svg>Add item</button>
+    <button data-tab="order"><svg class="i"><use href="#i-cart"/></svg>Order list <span id="lowBadge" class="badge hide">0</span></button>
+    <button data-tab="log"><svg class="i"><use href="#i-clock"/></svg>History</button>
   </nav>
-</header>
-<main>
+  <div class="side-foot">Data is saved in this browser. Use Backup regularly.</div>
+</aside>
+<div class="main">
+  <div class="top"><div><h1 id="pageTitle">Scan out</h1><p id="pageSub"></p></div><div id="scannerState" class="scanner hide">Scanner ready</div></div>
+  <div class="content">
+    <div class="stats" id="stats"></div>
 
-<section id="tab-scan">
-  <div class="card">
-    <h2>Scan a barcode to take 1 item</h2>
-    <input id="scanInput" class="scanbox" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Click here, then scan…">
-    <div id="scanResult" class="result" role="status" aria-live="polite"></div>
-    <p class="mute" style="margin-bottom:0">Each scan removes exactly 1 from stock. Keep this page open with the cursor in the box; a USB/Bluetooth scanner types the code and presses Enter automatically.</p>
-  </div>
-  <div class="card"><h2>Recent scans</h2><div id="recent" class="scroll"></div></div>
-</section>
-
-<section id="tab-stock" class="hide">
-  <div class="card">
-    <div class="row">
-      <div><label for="filter">Search items</label><input id="filter" type="text" placeholder="Type to filter…"></div>
-      <div style="flex:0 0 auto" class="acts">
-        <button class="btn sec" id="printAllLabels">Print all labels</button>
-        <button class="btn sec" id="exportBtn">Backup (download)</button>
-        <button class="btn sec" id="importBtn">Restore…</button>
-        <input type="file" id="importFile" accept=".json" class="hide">
+    <section id="tab-scan">
+      <div class="card">
+        <div class="scanpanel">
+          <div class="ic"><svg class="i"><use href="#i-scan"/></svg></div>
+          <h2>Scan a barcode to take 1 item</h2>
+          <p>Each scan removes exactly one unit from stock.</p>
+          <input id="scanInput" class="scanbox" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan barcode…" aria-label="Barcode input">
+          <div id="scanResult" class="result" role="status" aria-live="polite"></div>
+        </div>
+        <div class="hint">Keep the cursor in the box. A USB or Bluetooth scanner types the code and presses Enter automatically. You can also type a code by hand.</div>
       </div>
-    </div>
+      <div class="card"><div class="hd"><h2>Recent scans</h2></div><div id="recent" class="scroll"></div></div>
+    </section>
+
+    <section id="tab-stock" class="hide">
+      <div class="card">
+        <div class="hd">
+          <div style="flex:1;min-width:220px;max-width:340px"><input id="filter" type="text" placeholder="Search by name or barcode…" aria-label="Search"></div>
+          <div class="acts">
+            <button class="btn sec" id="printAllLabels"><svg class="i"><use href="#i-print"/></svg>Print all labels</button>
+            <button class="btn sec" id="exportBtn"><svg class="i"><use href="#i-down"/></svg>Backup</button>
+            <button class="btn sec" id="importBtn"><svg class="i"><use href="#i-up"/></svg>Restore</button>
+            <input type="file" id="importFile" accept=".json" class="hide">
+          </div>
+        </div>
+        <div class="scroll" id="stockTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-add" class="hide">
+      <div class="card">
+        <div class="hd"><div><h2>New item or restock</h2><p>New items get a barcode automatically. Choose a saved name to add stock to an existing item.</p></div></div>
+        <div class="bd">
+          <form id="addForm" class="row">
+            <div style="flex:2"><label for="addName">Item name</label>
+              <input id="addName" type="text" list="savedNames" autocomplete="off" required placeholder="e.g. Boxes of pens">
+              <datalist id="savedNames"></datalist></div>
+            <div><label for="addQty">Quantity</label><input id="addQty" type="number" min="0" step="1" value="1" required></div>
+            <div style="flex:0 0 auto"><button class="btn" type="submit"><svg class="i"><use href="#i-plus"/></svg>Save item</button></div>
+          </form>
+        </div>
+        <div class="hint">Adding stock resets the “total” used for the ¼ low-stock alert.</div>
+      </div>
+      <div id="addResult"></div>
+    </section>
+
+    <section id="tab-order" class="hide">
+      <div class="card">
+        <div class="hd"><div><h2>Items to order</h2><p>At or below ¼ of total stock, or out of stock.</p></div>
+          <button class="btn" id="printOrder"><svg class="i"><use href="#i-print"/></svg>Print order list</button></div>
+        <div class="scroll" id="orderTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-log" class="hide">
+      <div class="card"><div class="hd"><h2>History</h2></div><div class="scroll" id="logTable"></div></div>
+    </section>
   </div>
-  <div class="card scroll"><div id="stockTable"></div></div>
-</section>
-
-<section id="tab-add" class="hide">
-  <div class="card">
-    <h2>Add an item or receive stock</h2>
-    <form id="addForm" class="row">
-      <div style="flex:2"><label for="addName">Item name</label>
-        <input id="addName" type="text" list="savedNames" autocomplete="off" required placeholder="e.g. Boxes of pens">
-        <datalist id="savedNames"></datalist></div>
-      <div><label for="addQty">Quantity</label><input id="addQty" type="number" min="0" step="1" value="1" required></div>
-      <div style="flex:0 0 auto"><button class="btn" type="submit">Save</button></div>
-    </form>
-    <p id="addHint" class="mute" style="margin-bottom:0">A barcode is created automatically for new items. Pick a saved name from the list to add stock to an existing item (it keeps the same barcode). Adding stock resets the “total” used for the ¼ low-stock alert.</p>
-  </div>
-  <div id="addResult"></div>
-</section>
-
-<section id="tab-order" class="hide">
-  <div class="card">
-    <div class="row"><div><h2 style="margin:0">Items to order</h2><div class="mute">Items at or below ¼ of their total stock (or out of stock).</div></div>
-    <div style="flex:0 0 auto"><button class="btn" id="printOrder">🖨 Print order list</button></div></div>
-  </div>
-  <div class="card scroll"><div id="orderTable"></div></div>
-</section>
-
-<section id="tab-log" class="hide">
-  <div class="card scroll"><h2>History</h2><div id="logTable"></div></div>
-</section>
-</main>
-
+</div>
+</div>
 <div id="printArea"></div>
 
 <script>
@@ -143,6 +229,7 @@ function barcodeSVG(text,h){
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${bits.length} ${h}" width="${bits.length*2}" height="${h}" preserveAspectRatio="none" fill="#000" style="background:#fff" role="img" aria-label="Barcode ${esc(text)}">${r}</svg>`;
 }
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ico=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
 
 // ---------- storage ----------
 const KEY="inventory.v1";
@@ -153,66 +240,80 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert(
 const isOut=i=>i.qty<=0;
 const isLow=i=>i.qty<=0||i.qty*4<=i.baseline;
 const byCode=c=>db.items.find(i=>i.barcode.toLowerCase()===c.toLowerCase());
-const fmt=t=>new Date(t).toLocaleString();
+const fmt=t=>new Date(t).toLocaleString([], {dateStyle:"medium",timeStyle:"short"});
 function addLog(type,item,delta){db.log.unshift({t:Date.now(),type,name:item.name,barcode:item.barcode,delta,after:item.qty});db.log=db.log.slice(0,2000)}
 
 // ---------- tabs ----------
+const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Inventory","All items, barcodes and stock levels"],add:["Add item","Create new items or receive stock"],order:["Order list","Items that need to be reordered"],log:["History","Every scan, restock and correction"]};
 let tab="scan";
-function show(t){tab=t;document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
+function show(t){tab=t;document.querySelectorAll(".content>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.getElementById("pageTitle").textContent=TITLES[t][0];document.getElementById("pageSub").textContent=TITLES[t][1];
+  document.getElementById("scannerState").classList.toggle("hide",t!=="scan");
   render();if(t==="scan")focusScan()}
 document.getElementById("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
 
 // ---------- scan ----------
-const scanInput=document.getElementById("scanInput"),scanResult=document.getElementById("scanResult");
+const scanInput=document.getElementById("scanInput"),scanResult=document.getElementById("scanResult"),scState=document.getElementById("scannerState");
 function focusScan(){if(tab==="scan")scanInput.focus()}
+scanInput.addEventListener("focus",()=>{scState.classList.add("ready");scState.textContent="Scanner ready"});
+scanInput.addEventListener("blur",()=>{scState.classList.remove("ready");scState.textContent="Click the box to scan"});
 document.addEventListener("click",e=>{if(tab==="scan"&&!e.target.closest("button,a,input"))focusScan()});
 scanInput.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;e.preventDefault();
   const c=scanInput.value.trim();scanInput.value="";if(!c)return;
   const it=byCode(c);
-  if(!it){scanResult.className="result err";scanResult.innerHTML=`Unknown barcode<br><b>${esc(c)}</b>`;return}
-  if(it.qty<=0){scanResult.className="result low";scanResult.innerHTML=`<b>${esc(it.name)}</b><br>is OUT OF STOCK – nothing taken.`;return}
+  if(!it){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Unknown barcode</div><div>${esc(c)}</div>`;return}
+  if(it.qty<=0){scanResult.className="result low";scanResult.innerHTML=`<div class="nm">${esc(it.name)}</div><div>Out of stock – nothing taken.</div>`;return}
   it.qty-=1;addLog("take",it,-1);save();
   const low=isLow(it);
   scanResult.className="result "+(low?"low":"ok");
-  scanResult.innerHTML=`<b>${esc(it.name)}</b> – 1 taken<div class="big">${it.qty}</div>remaining${low?"<br><b>⚠ LOW STOCK – order needed</b>":""}`;
-  renderRecent();updateBadge();
+  scanResult.innerHTML=`<div class="nm">${esc(it.name)} – 1 taken</div><div class="big">${it.qty}</div><div>remaining</div>${low?'<span class="warn">LOW STOCK – ORDER NEEDED</span>':""}`;
+  renderRecent();renderStats();updateBadge();
 });
 
 // ---------- rendering ----------
-function status(i){return isOut(i)?'<span class="pill out">OUT</span>':isLow(i)?'<span class="pill low">LOW – ORDER</span>':'<span class="pill ok">OK</span>'}
+function status(i){return isOut(i)?'<span class="pill out">Out</span>':isLow(i)?'<span class="pill low">Low – order</span>':'<span class="pill ok">In stock</span>'}
+const empty=(m)=>`<div class="empty">${ico("box")}<div>${m}</div></div>`;
+function renderStats(){
+  const units=db.items.reduce((a,i)=>a+i.qty,0),low=db.items.filter(i=>isLow(i)).length,out=db.items.filter(isOut).length;
+  const s=(cls,ic,n,l)=>`<div class="stat ${cls}"><div class="ic">${ico(ic)}</div><div><b>${n}</b><span>${l}</span></div></div>`;
+  document.getElementById("stats").innerHTML=s("","layers",db.items.length,"Items")+s("green","box",units.toLocaleString(),"Units in stock")+s(low?"red":"green",low?"alert":"check",low,"Low stock")+s(out?"amber":"green","cart",out,"Out of stock");
+}
 function renderRecent(){
-  const rows=db.log.filter(l=>l.type==="take").slice(0,10);
-  document.getElementById("recent").innerHTML=rows.length?`<table><tr><th>When</th><th>Item</th><th>Left</th></tr>${rows.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.name)}</td><td>${l.after}</td></tr>`).join("")}</table>`:'<span class="mute">No scans yet.</span>';
+  const rows=db.log.filter(l=>l.type==="take").slice(0,8);
+  document.getElementById("recent").innerHTML=rows.length?`<table><thead><tr><th>When</th><th>Item</th><th>Barcode</th><th>Left</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${fmt(l.t)}</td><td class="name">${esc(l.name)}</td><td>${esc(l.barcode)}</td><td class="qty">${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No scans yet.");
 }
 function renderStock(){
   const f=document.getElementById("filter").value.toLowerCase();
   const items=db.items.filter(i=>!f||i.name.toLowerCase().includes(f)||i.barcode.toLowerCase().includes(f));
-  document.getElementById("stockTable").innerHTML=items.length?`<table><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total*</th><th>Status</th><th></th></tr>${items.map(i=>`
-  <tr class="${isLow(i)?"low":""}"><td><b>${esc(i.name)}</b></td>
+  document.getElementById("stockTable").innerHTML=items.length?`<table><thead><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Status</th><th></th></tr></thead><tbody>${items.map(i=>{
+    const pct=i.baseline>0?Math.max(0,Math.min(100,i.qty/i.baseline*100)):0;
+    return `<tr class="${isLow(i)?"low":""}"><td class="name">${esc(i.name)}</td>
   <td class="bc">${barcodeSVG(i.barcode,34)}<small>${esc(i.barcode)}</small></td>
-  <td class="q">${i.qty}</td><td>${i.baseline}</td><td>${status(i)}</td>
+  <td><span class="qty">${i.qty}</span> <span style="color:var(--mute)">/ ${i.baseline}</span><div class="meter"><i style="width:${pct}%"></i></div></td>
+  <td>${status(i)}</td>
   <td><div class="acts"><button class="btn sm" data-a="recv" data-id="${i.id}">+ Stock</button>
   <button class="btn sm sec" data-a="label" data-id="${i.id}">Label</button>
   <button class="btn sm sec" data-a="rename" data-id="${i.id}">Rename</button>
-  <button class="btn sm sec" data-a="fix" data-id="${i.id}">Correct qty</button>
-  <button class="btn sm danger" data-a="del" data-id="${i.id}">Delete</button></div></td></tr>`).join("")}</table><p class="mute">*Total = stock level when last added. An item turns red at ¼ of this.</p>`:'<span class="mute">No items yet – use “Add item”.</span>';
+  <button class="btn sm sec" data-a="fix" data-id="${i.id}">Correct</button>
+  <button class="btn sm danger" data-a="del" data-id="${i.id}">Delete</button></div></td></tr>`}).join("")}</tbody></table><div class="hint">Bar = stock vs. total when last added. Items turn red at ¼ of the total.</div>`:empty(db.items.length?"No items match your search.":"No items yet – go to “Add item” to create your first one.");
 }
 function lowItems(){return db.items.filter(isLow).sort((a,b)=>a.qty/(a.baseline||1)-b.qty/(b.baseline||1))}
 function suggest(i){return Math.max(i.baseline-i.qty,1)}
 function renderOrder(){
   const l=lowItems();
-  document.getElementById("orderTable").innerHTML=l.length?orderTable(l):'<span class="mute">Nothing needs ordering right now. 🎉</span>';
+  document.getElementById("orderTable").innerHTML=l.length?orderTable(l):empty("Nothing needs ordering right now.");
 }
-function orderTable(l){return `<table><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total</th><th>Suggested order qty</th></tr>${l.map(i=>`<tr><td><b>${esc(i.name)}</b></td><td>${esc(i.barcode)}</td><td>${i.qty}${isOut(i)?" (OUT)":""}</td><td>${i.baseline}</td><td>${suggest(i)}</td></tr>`).join("")}</table>`}
+function orderTable(l){return `<table><thead><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total</th><th>Suggested order qty</th></tr></thead><tbody>${l.map(i=>`<tr><td class="name">${esc(i.name)}</td><td>${esc(i.barcode)}</td><td>${i.qty}${isOut(i)?" (OUT)":""}</td><td>${i.baseline}</td><td><b>${suggest(i)}</b></td></tr>`).join("")}</tbody></table>`}
 function renderLog(){
-  document.getElementById("logTable").innerHTML=db.log.length?`<table><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th></tr>${db.log.slice(0,300).map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.type)}</td><td>${esc(l.name)}</td><td>${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td></tr>`).join("")}</table>`:'<span class="mute">Nothing yet.</span>';
+  const tl={take:"Taken","new item":"New item",restock:"Restock",correction:"Correction"};
+  document.getElementById("logTable").innerHTML=db.log.length?`<table><thead><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th></tr></thead><tbody>${db.log.slice(0,300).map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(tl[l.type]||l.type)}</td><td class="name">${esc(l.name)}</td><td style="color:${l.delta<0?"var(--red)":"var(--green)"};font-weight:600">${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No activity yet.");
 }
 function updateBadge(){const n=lowItems().length,b=document.getElementById("lowBadge");b.textContent=n;b.classList.toggle("hide",!n)}
 function render(){
   document.getElementById("savedNames").innerHTML=db.items.map(i=>`<option value="${esc(i.name)}">`).join("");
-  updateBadge();
+  updateBadge();renderStats();
   if(tab==="scan")renderRecent();else if(tab==="stock")renderStock();else if(tab==="order")renderOrder();else if(tab==="log")renderLog();
 }
 document.getElementById("filter").oninput=renderStock;
@@ -231,7 +332,7 @@ document.getElementById("addForm").onsubmit=e=>{
     db.items.push(it);addLog("new item",it,qty);msg=`Created <b>${esc(it.name)}</b> with ${qty} in stock.`;
   }
   save();
-  document.getElementById("addResult").innerHTML=`<div class="card"><p>✅ ${msg}</p><div class="label" style="max-width:280px;margin-bottom:10px"><b>${esc(it.name)}</b>${barcodeSVG(it.barcode,60)}<small>${esc(it.barcode)}</small></div><button class="btn sec" id="printNew">Print this label</button></div>`;
+  document.getElementById("addResult").innerHTML=`<div class="card"><div class="bd success"><div class="t"><div class="pill ok" style="margin-bottom:8px">Saved</div><p style="margin:0 0 12px">${msg}</p><button class="btn sec" id="printNew">${ico("print")}Print this label</button></div><div class="label" style="width:270px"><b>${esc(it.name)}</b>${barcodeSVG(it.barcode,60)}<small>${esc(it.barcode)}</small></div></div></div>`;
   document.getElementById("printNew").onclick=()=>printLabels([it]);
   e.target.reset();document.getElementById("addQty").value=1;render();document.getElementById("addName").focus();
 };
@@ -253,8 +354,7 @@ document.getElementById("stockTable").onclick=e=>{
 };
 
 // ---------- printing ----------
-function doPrint(html){const p=document.getElementById("printArea");p.innerHTML=html;
-  const imgs=0;setTimeout(()=>{window.print()},50)}
+function doPrint(html){document.getElementById("printArea").innerHTML=html;setTimeout(()=>window.print(),50)}
 function printLabels(list){
   if(!list.length)return alert("No items to print.");
   doPrint(`<div class="labels">${list.map(i=>`<div class="label"><b>${esc(i.name)}</b>${barcodeSVG(i.barcode,60)}<small>${esc(i.barcode)}</small></div>`).join("")}</div>`);
@@ -262,7 +362,7 @@ function printLabels(list){
 document.getElementById("printAllLabels").onclick=()=>printLabels(db.items);
 document.getElementById("printOrder").onclick=()=>{
   const l=lowItems();if(!l.length)return alert("Nothing needs ordering right now.");
-  doPrint(`<h1 style="font-size:20px">Order list</h1><p>${new Date().toLocaleString()} – ${l.length} item(s) at or below ¼ of total stock</p>${orderTable(l)}<p style="margin-top:30px">Approved by: ____________________</p>`);
+  doPrint(`<h1 style="font-size:20px;font-family:sans-serif">Order list</h1><p style="font-family:sans-serif">${new Date().toLocaleString()} – ${l.length} item(s) at or below ¼ of total stock</p>${orderTable(l)}<p style="margin-top:36px;font-family:sans-serif">Approved by: ____________________ &nbsp; Date: ____________</p>`);
 };
 
 // ---------- backup ----------
@@ -278,7 +378,7 @@ document.getElementById("importFile").onchange=async e=>{
   e.target.value="";
 };
 
-load();render();focusScan();
+load();show("scan");
 </script>
 </body>
 </html>
