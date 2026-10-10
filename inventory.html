@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventory</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#1c2230;--mute:#667085;--line:#e3e6ec;--brand:#1f5eff;--red:#d92d20;--redbg:#fee4e2;--green:#067647;--greenbg:#d1fadf;--amber:#b54708;--amberbg:#fef0c7}
+@media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b2029;--ink:#eef0f4;--mute:#98a2b3;--line:#2c3340;--brand:#6690ff;--red:#ff6b61;--redbg:#4a1d1a;--green:#47cd89;--greenbg:#12372a;--amber:#fdb022;--amberbg:#4a3410}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0 12px 0 0}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:none;border:0;padding:8px 14px;border-radius:8px;font:inherit;color:var(--mute);cursor:pointer}
+nav button.on{background:var(--brand);color:#fff}
+nav .badge{background:var(--red);color:#fff;border-radius:99px;padding:0 7px;font-size:12px;margin-left:6px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:17px}
+input,button,select{font:inherit}
+input[type=text],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+label{display:block;font-size:13px;color:var(--mute);margin:0 0 4px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.row>div{flex:1;min-width:160px}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+.btn.sec{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.danger{background:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+tr.low td{background:var(--redbg)}
+tr.low td.q{color:var(--red);font-weight:700}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--greenbg);color:var(--green)}
+.pill.low{background:var(--red);color:#fff}
+.pill.out{background:var(--ink);color:var(--bg)}
+.scanbox{font-size:26px;padding:16px!important;text-align:center;letter-spacing:.05em}
+.result{margin-top:14px;padding:18px;border-radius:12px;text-align:center;font-size:18px;display:none}
+.result.ok{background:var(--greenbg);color:var(--green);display:block}
+.result.low{background:var(--redbg);color:var(--red);display:block}
+.result.err{background:var(--amberbg);color:var(--amber);display:block}
+.result .big{font-size:44px;font-weight:700;line-height:1.1}
+.mute{color:var(--mute)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.bc svg{display:block;max-width:100%}
+.hide{display:none!important}
+.scroll{overflow-x:auto}
+#printArea{display:none}
+.label{border:1px dashed #999;padding:8px;text-align:center;break-inside:avoid;background:#fff;color:#000}
+.label b{display:block;font-size:13px;margin-bottom:2px}
+.labels{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+@media print{
+  body{background:#fff;color:#000}
+  header,main{display:none!important}
+  #printArea{display:block}
+  #printArea table{color:#000}
+  #printArea th,#printArea td{border-bottom:1px solid #999;color:#000}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 Inventory</h1>
+  <nav id="nav">
+    <button data-tab="scan" class="on">Scan out</button>
+    <button data-tab="stock">Inventory</button>
+    <button data-tab="add">Add item</button>
+    <button data-tab="order">Order list <span id="lowBadge" class="badge hide">0</span></button>
+    <button data-tab="log">History</button>
+  </nav>
+</header>
+<main>
+
+<section id="tab-scan">
+  <div class="card">
+    <h2>Scan a barcode to take 1 item</h2>
+    <input id="scanInput" class="scanbox" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Click here, then scan…">
+    <div id="scanResult" class="result" role="status" aria-live="polite"></div>
+    <p class="mute" style="margin-bottom:0">Each scan removes exactly 1 from stock. Keep this page open with the cursor in the box; a USB/Bluetooth scanner types the code and presses Enter automatically.</p>
+  </div>
+  <div class="card"><h2>Recent scans</h2><div id="recent" class="scroll"></div></div>
+</section>
+
+<section id="tab-stock" class="hide">
+  <div class="card">
+    <div class="row">
+      <div><label for="filter">Search items</label><input id="filter" type="text" placeholder="Type to filter…"></div>
+      <div style="flex:0 0 auto" class="acts">
+        <button class="btn sec" id="printAllLabels">Print all labels</button>
+        <button class="btn sec" id="exportBtn">Backup (download)</button>
+        <button class="btn sec" id="importBtn">Restore…</button>
+        <input type="file" id="importFile" accept=".json" class="hide">
+      </div>
+    </div>
+  </div>
+  <div class="card scroll"><div id="stockTable"></div></div>
+</section>
+
+<section id="tab-add" class="hide">
+  <div class="card">
+    <h2>Add an item or receive stock</h2>
+    <form id="addForm" class="row">
+      <div style="flex:2"><label for="addName">Item name</label>
+        <input id="addName" type="text" list="savedNames" autocomplete="off" required placeholder="e.g. Boxes of pens">
+        <datalist id="savedNames"></datalist></div>
+      <div><label for="addQty">Quantity</label><input id="addQty" type="number" min="0" step="1" value="1" required></div>
+      <div style="flex:0 0 auto"><button class="btn" type="submit">Save</button></div>
+    </form>
+    <p id="addHint" class="mute" style="margin-bottom:0">A barcode is created automatically for new items. Pick a saved name from the list to add stock to an existing item (it keeps the same barcode). Adding stock resets the “total” used for the ¼ low-stock alert.</p>
+  </div>
+  <div id="addResult"></div>
+</section>
+
+<section id="tab-order" class="hide">
+  <div class="card">
+    <div class="row"><div><h2 style="margin:0">Items to order</h2><div class="mute">Items at or below ¼ of their total stock (or out of stock).</div></div>
+    <div style="flex:0 0 auto"><button class="btn" id="printOrder">🖨 Print order list</button></div></div>
+  </div>
+  <div class="card scroll"><div id="orderTable"></div></div>
+</section>
+
+<section id="tab-log" class="hide">
+  <div class="card scroll"><h2>History</h2><div id="logTable"></div></div>
+</section>
+</main>
+
+<div id="printArea"></div>
+
+<script>
+const CODES=["11011001100","11001101100","11001100110","10010011000","10010001100","10001001100","10011001000","10011000100","10001100100","11001001000","11001000100","11000100100","10110011100","10011011100","10011001110","10111001100","10011101100","10011100110","11001110010","11001011100","11001001110","11011100100","11001110100","11101101110","11101001100","11100101100","11100100110","11101100100","11100110100","11100110010","11011011000","11011000110","11000110110","10100011000","10001011000","10001000110","10110001000","10001101000","10001100010","11010001000","11000101000","11000100010","10110111000","10110001110","10001101110","10111011000","10111000110","10001110110","11101110110","11010001110","11000101110","11011101000","11011100010","11011101110","11101011000","11101000110","11100010110","11101101000","11101100010","11100011010","11101111010","11001000010","11110001010","10100110000","10100001100","10010110000","10010000110","10000101100","10000100110","10110010000","10110000100","10011010000","10011000010","10000110100","10000110010","11000010010","11001010000","11110111010","11000010100","10001111010","10100111100","10010111100","10010011110","10111100100","10011110100","10011110010","11110100100","11110010100","11110010010","11011011110","11011110110","11110110110","10101111000","10100011110","10001011110","10111101000","10111100010","11110101000","11110100010","10111011110","10111101110","11101011110","11110101110","11010000100","11010010000","11010011100"];
+const STOP="1100011101011";
+function code128(text){
+  const v=[...text].map(ch=>{const c=ch.charCodeAt(0)-32;if(c<0||c>95)throw new Error("Unsupported char");return c});
+  let sum=104;v.forEach((x,i)=>sum+=x*(i+1));
+  return [104,...v,sum%103].map(x=>CODES[x]).join("")+STOP;
+}
+function barcodeSVG(text,h){
+  h=h||60;const bits="0000000000"+code128(text)+"0000000000";
+  let r="",i=0;
+  while(i<bits.length){if(bits[i]==="1"){let j=i;while(bits[j]==="1")j++;r+=`<rect x="${i}" y="0" width="${j-i}" height="${h}"/>`;i=j}else i++}
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${bits.length} ${h}" width="${bits.length*2}" height="${h}" preserveAspectRatio="none" fill="#000" style="background:#fff" role="img" aria-label="Barcode ${esc(text)}">${r}</svg>`;
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// ---------- storage ----------
+const KEY="inventory.v1";
+let db;
+function load(){try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){db=null}
+  if(!db||!Array.isArray(db.items))db={items:[],log:[],next:1}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert("Could not save – browser storage is blocked or full.")}}
+const isOut=i=>i.qty<=0;
+const isLow=i=>i.qty<=0||i.qty*4<=i.baseline;
+const byCode=c=>db.items.find(i=>i.barcode.toLowerCase()===c.toLowerCase());
+const fmt=t=>new Date(t).toLocaleString();
+function addLog(type,item,delta){db.log.unshift({t:Date.now(),type,name:item.name,barcode:item.barcode,delta,after:item.qty});db.log=db.log.slice(0,2000)}
+
+// ---------- tabs ----------
+let tab="scan";
+function show(t){tab=t;document.querySelectorAll("main>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  render();if(t==="scan")focusScan()}
+document.getElementById("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
+
+// ---------- scan ----------
+const scanInput=document.getElementById("scanInput"),scanResult=document.getElementById("scanResult");
+function focusScan(){if(tab==="scan")scanInput.focus()}
+document.addEventListener("click",e=>{if(tab==="scan"&&!e.target.closest("button,a,input"))focusScan()});
+scanInput.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;e.preventDefault();
+  const c=scanInput.value.trim();scanInput.value="";if(!c)return;
+  const it=byCode(c);
+  if(!it){scanResult.className="result err";scanResult.innerHTML=`Unknown barcode<br><b>${esc(c)}</b>`;return}
+  if(it.qty<=0){scanResult.className="result low";scanResult.innerHTML=`<b>${esc(it.name)}</b><br>is OUT OF STOCK – nothing taken.`;return}
+  it.qty-=1;addLog("take",it,-1);save();
+  const low=isLow(it);
+  scanResult.className="result "+(low?"low":"ok");
+  scanResult.innerHTML=`<b>${esc(it.name)}</b> – 1 taken<div class="big">${it.qty}</div>remaining${low?"<br><b>⚠ LOW STOCK – order needed</b>":""}`;
+  renderRecent();updateBadge();
+});
+
+// ---------- rendering ----------
+function status(i){return isOut(i)?'<span class="pill out">OUT</span>':isLow(i)?'<span class="pill low">LOW – ORDER</span>':'<span class="pill ok">OK</span>'}
+function renderRecent(){
+  const rows=db.log.filter(l=>l.type==="take").slice(0,10);
+  document.getElementById("recent").innerHTML=rows.length?`<table><tr><th>When</th><th>Item</th><th>Left</th></tr>${rows.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.name)}</td><td>${l.after}</td></tr>`).join("")}</table>`:'<span class="mute">No scans yet.</span>';
+}
+function renderStock(){
+  const f=document.getElementById("filter").value.toLowerCase();
+  const items=db.items.filter(i=>!f||i.name.toLowerCase().includes(f)||i.barcode.toLowerCase().includes(f));
+  document.getElementById("stockTable").innerHTML=items.length?`<table><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total*</th><th>Status</th><th></th></tr>${items.map(i=>`
+  <tr class="${isLow(i)?"low":""}"><td><b>${esc(i.name)}</b></td>
+  <td class="bc">${barcodeSVG(i.barcode,34)}<small>${esc(i.barcode)}</small></td>
+  <td class="q">${i.qty}</td><td>${i.baseline}</td><td>${status(i)}</td>
+  <td><div class="acts"><button class="btn sm" data-a="recv" data-id="${i.id}">+ Stock</button>
+  <button class="btn sm sec" data-a="label" data-id="${i.id}">Label</button>
+  <button class="btn sm sec" data-a="rename" data-id="${i.id}">Rename</button>
+  <button class="btn sm sec" data-a="fix" data-id="${i.id}">Correct qty</button>
+  <button class="btn sm danger" data-a="del" data-id="${i.id}">Delete</button></div></td></tr>`).join("")}</table><p class="mute">*Total = stock level when last added. An item turns red at ¼ of this.</p>`:'<span class="mute">No items yet – use “Add item”.</span>';
+}
+function lowItems(){return db.items.filter(isLow).sort((a,b)=>a.qty/(a.baseline||1)-b.qty/(b.baseline||1))}
+function suggest(i){return Math.max(i.baseline-i.qty,1)}
+function renderOrder(){
+  const l=lowItems();
+  document.getElementById("orderTable").innerHTML=l.length?orderTable(l):'<span class="mute">Nothing needs ordering right now. 🎉</span>';
+}
+function orderTable(l){return `<table><tr><th>Item</th><th>Barcode</th><th>In stock</th><th>Total</th><th>Suggested order qty</th></tr>${l.map(i=>`<tr><td><b>${esc(i.name)}</b></td><td>${esc(i.barcode)}</td><td>${i.qty}${isOut(i)?" (OUT)":""}</td><td>${i.baseline}</td><td>${suggest(i)}</td></tr>`).join("")}</table>`}
+function renderLog(){
+  document.getElementById("logTable").innerHTML=db.log.length?`<table><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th></tr>${db.log.slice(0,300).map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.type)}</td><td>${esc(l.name)}</td><td>${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td></tr>`).join("")}</table>`:'<span class="mute">Nothing yet.</span>';
+}
+function updateBadge(){const n=lowItems().length,b=document.getElementById("lowBadge");b.textContent=n;b.classList.toggle("hide",!n)}
+function render(){
+  document.getElementById("savedNames").innerHTML=db.items.map(i=>`<option value="${esc(i.name)}">`).join("");
+  updateBadge();
+  if(tab==="scan")renderRecent();else if(tab==="stock")renderStock();else if(tab==="order")renderOrder();else if(tab==="log")renderLog();
+}
+document.getElementById("filter").oninput=renderStock;
+
+// ---------- add / receive ----------
+document.getElementById("addForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=document.getElementById("addName").value.trim().replace(/\s+/g," ");
+  const qty=parseInt(document.getElementById("addQty").value,10);
+  if(!name||!(qty>=0))return;
+  let it=db.items.find(i=>i.name.toLowerCase()===name.toLowerCase()),msg;
+  if(it){it.qty+=qty;it.baseline=it.qty;addLog("restock",it,qty);msg=`Added ${qty} to <b>${esc(it.name)}</b>. Now in stock: ${it.qty}.`}
+  else{
+    const barcode="INV-"+String(db.next++).padStart(5,"0");
+    it={id:"i"+Date.now()+Math.random().toString(36).slice(2,6),name,barcode,qty,baseline:qty,created:Date.now()};
+    db.items.push(it);addLog("new item",it,qty);msg=`Created <b>${esc(it.name)}</b> with ${qty} in stock.`;
+  }
+  save();
+  document.getElementById("addResult").innerHTML=`<div class="card"><p>✅ ${msg}</p><div class="label" style="max-width:280px;margin-bottom:10px"><b>${esc(it.name)}</b>${barcodeSVG(it.barcode,60)}<small>${esc(it.barcode)}</small></div><button class="btn sec" id="printNew">Print this label</button></div>`;
+  document.getElementById("printNew").onclick=()=>printLabels([it]);
+  e.target.reset();document.getElementById("addQty").value=1;render();document.getElementById("addName").focus();
+};
+
+// ---------- item actions ----------
+document.getElementById("stockTable").onclick=e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const it=db.items.find(i=>i.id===b.dataset.id);if(!it)return;
+  const a=b.dataset.a;
+  if(a==="recv"){const n=parseInt(prompt(`How many "${it.name}" were received?`,"1"),10);
+    if(n>0){it.qty+=n;it.baseline=it.qty;addLog("restock",it,n);save();render()}}
+  else if(a==="label")printLabels([it]);
+  else if(a==="rename"){const n=(prompt("New name:",it.name)||"").trim();
+    if(n&&!db.items.some(x=>x!==it&&x.name.toLowerCase()===n.toLowerCase())){it.name=n;save();render()}}
+  else if(a==="fix"){const n=parseInt(prompt(`Correct the stock count for "${it.name}" (currently ${it.qty}):`,it.qty),10);
+    if(n>=0){const d=n-it.qty;it.qty=n;if(n>it.baseline)it.baseline=n;addLog("correction",it,d);save();render()}}
+  else if(a==="del"&&confirm(`Delete "${it.name}" and its barcode? This cannot be undone.`)){
+    db.items=db.items.filter(x=>x!==it);save();render()}
+};
+
+// ---------- printing ----------
+function doPrint(html){const p=document.getElementById("printArea");p.innerHTML=html;
+  const imgs=0;setTimeout(()=>{window.print()},50)}
+function printLabels(list){
+  if(!list.length)return alert("No items to print.");
+  doPrint(`<div class="labels">${list.map(i=>`<div class="label"><b>${esc(i.name)}</b>${barcodeSVG(i.barcode,60)}<small>${esc(i.barcode)}</small></div>`).join("")}</div>`);
+}
+document.getElementById("printAllLabels").onclick=()=>printLabels(db.items);
+document.getElementById("printOrder").onclick=()=>{
+  const l=lowItems();if(!l.length)return alert("Nothing needs ordering right now.");
+  doPrint(`<h1 style="font-size:20px">Order list</h1><p>${new Date().toLocaleString()} – ${l.length} item(s) at or below ¼ of total stock</p>${orderTable(l)}<p style="margin-top:30px">Approved by: ____________________</p>`);
+};
+
+// ---------- backup ----------
+document.getElementById("exportBtn").onclick=()=>{
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:"application/json"}));
+  a.download="inventory-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!Array.isArray(d.items))throw 0;
+    if(confirm(`Replace current data with the backup (${d.items.length} items)?`)){db={items:d.items,log:d.log||[],next:d.next||d.items.length+1};save();render()}}
+  catch(_){alert("That file is not a valid inventory backup.")}
+  e.target.value="";
+};
+
+load();render();focusScan();
+</script>
+</body>
+</html>
