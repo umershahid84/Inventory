@@ -6,32 +6,42 @@
 2. Open **SQL Editor → New query**, paste the entire contents of `supabase/schema.sql`, and click **Run**.
    You should see "Success".
 
-## 2. Turn off public sign-up
-**Authentication → Sign In / Providers → Email** → switch **off** "Allow new users to sign up" and save.
-(Otherwise anyone who finds the site could create an account.)
+## 2. Create the administrators (as many as you like)
+Administrators sign in with an email and password and can add items, restock, print labels and the
+order list, manage staff users and see the full history.
 
-## 3. Create the staff logins
-**Authentication → Users → Add user → Create new user.** Enter an email and password, and tick
-**Auto Confirm User**. Create one for yourself and one for each person who will scan.
-
-Then, in **SQL Editor**, give each person a role (replace the emails):
+1. **Authentication → Sign In / Providers → Email** → switch **off** "Allow new users to sign up" and save.
+   (Otherwise anyone who finds the site could create an account.)
+2. **Authentication → Users → Add user → Create new user.** Enter an email and password and tick
+   **Auto Confirm User**. Repeat for each administrator.
+3. In **SQL Editor**, make each of them an administrator (replace the email; run once per admin):
 
 ```sql
 insert into public.user_roles (user_id, role)
 select id, 'admin' from auth.users where email = 'you@example.com';
-
-insert into public.user_roles (user_id, role)
-select id, 'scanner' from auth.users where email = 'warehouse@example.com';
 ```
 
-* **admin** – add items, restock, rename, correct counts, delete, print labels and the order list, export.
-* **scanner** – scan items out and view stock/history only.
+To add another administrator later, repeat steps 2 and 3. To remove one, delete the user under
+Authentication → Users.
 
-## 4. Connect the app
+## 3. Connect the app
 **Project Settings → API**: copy the **Project URL** and the **anon / public** key into `config.js`,
 commit, and push. Vercel redeploys automatically. (The anon key is designed to be public; the rules in
-`schema.sql` stop anyone who is not signed in from seeing or changing anything. **Never** put the
-`service_role` key in this file.)
+`schema.sql` protect the data. **Never** put the `service_role` key in this file.)
+
+## 4. Add staff users (done inside the app)
+Sign in as an administrator → **Staff users** → enter
+* **Username** – 3 letters + 3 numbers, e.g. `ABC123` (every person gets their own),
+* **Full name**, and
+* **PIN** – 4 digits (several people may share the same PIN).
+
+Staff open the site, choose **Staff**, type their username and PIN, and scan. Every scan is recorded with
+their username and name (see **History**). They are signed out automatically after 60 seconds without
+scanning (change `IDLE_SECONDS` in `config.js`), so the next person must sign in as themselves.
+Staff can only scan – they cannot see or change anything else.
+
+Admins can reset a PIN, rename, or deactivate a user at any time (deactivating keeps their history).
+After 5 wrong PINs a username is locked for 15 minutes; resetting the PIN unlocks it straight away.
 
 ## 5. Keeping your data safe
 * Everything is stored in Supabase, not in the browser, so clearing a browser loses nothing.

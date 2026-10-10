@@ -96,6 +96,11 @@ tr.low .meter i{background:var(--red)}
 .result .warn{display:inline-block;margin-top:8px;background:var(--red);color:#fff;border-radius:99px;padding:2px 12px;font-weight:700;font-size:12.5px}
 .hint{color:var(--mute);font-size:12.5px;padding:12px 20px;border-top:1px solid var(--line);background:#f8fafc}
 .hide{display:none!important}
+.idle{display:table;margin:-6px auto 14px;background:#eff6ff;color:#1e40af;border-radius:99px;padding:4px 14px;font-size:13px;font-weight:600}
+.tabs2{display:flex;gap:4px;background:#f1f5f9;border-radius:10px;padding:4px;margin-bottom:16px}
+.tabs2 button{flex:1;border:0;background:none;padding:8px;border-radius:7px;font:inherit;font-weight:600;color:var(--mute);cursor:pointer}
+.tabs2 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.1)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em}
 body:not(.is-admin) .adm{display:none!important}
 #auth{position:fixed;inset:0;background:var(--bg);z-index:50;display:grid;place-items:center;padding:16px;overflow:auto}
 .authbox{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:30px;width:100%;max-width:400px}
@@ -103,6 +108,8 @@ body:not(.is-admin) .adm{display:none!important}
 .authbox h2{margin:0 0 4px;font-size:18px}.authbox p{color:var(--mute);margin:0 0 16px}
 .authbox .btn{width:100%;justify-content:center;margin-top:6px}
 .authbox .f{margin-bottom:12px}
+.authbox input{height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;width:100%;font:inherit}
+#lu{text-transform:uppercase}
 .autherr{color:var(--red);background:var(--redbg);border:1px solid var(--redline);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:13px}
 .authbox ol{padding-left:18px;color:#334155}.authbox code{background:#f1f5f9;padding:1px 5px;border-radius:5px;font-size:12px}
 #banner{margin:0 0 14px;padding:10px 14px;border-radius:10px;background:var(--amberbg);border:1px solid #fde68a;color:#92400e;font-weight:500}
@@ -147,6 +154,7 @@ body:not(.is-admin) .adm{display:none!important}
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v5M12 18v.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.6 3-5.5 6.5-5.5s6 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .6 3.3 2.3 3.6 5.2"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V3m0 0-4 4m4-4 4 4M4 21h16"/></symbol>
 </svg>
@@ -156,10 +164,11 @@ body:not(.is-admin) .adm{display:none!important}
   <div class="brand"><div class="logo"><svg class="i" style="stroke:#fff"><use href="#i-box"/></svg></div><div>Stock Inventory<small>Barcode tracking</small></div></div>
   <nav id="nav">
     <button data-tab="scan" class="on"><svg class="i"><use href="#i-scan"/></svg>Scan out</button>
-    <button data-tab="stock"><svg class="i"><use href="#i-layers"/></svg>Inventory</button>
+    <button data-tab="stock" class="adm"><svg class="i"><use href="#i-layers"/></svg>Inventory</button>
     <button data-tab="add" class="adm"><svg class="i"><use href="#i-plus"/></svg>Add item</button>
     <button data-tab="order" class="adm"><svg class="i"><use href="#i-cart"/></svg>Order list <span id="lowBadge" class="badge hide">0</span></button>
-    <button data-tab="log"><svg class="i"><use href="#i-clock"/></svg>History</button>
+    <button data-tab="users" class="adm"><svg class="i"><use href="#i-users"/></svg>Staff users</button>
+    <button data-tab="log" class="adm"><svg class="i"><use href="#i-clock"/></svg>History</button>
   </nav>
   <div class="side-foot"><div class="who"><b id="whoRole"></b><span id="whoEmail"></span><button id="signOut">Sign out</button></div></div>
 </aside>
@@ -167,7 +176,7 @@ body:not(.is-admin) .adm{display:none!important}
   <div class="top"><div><h1 id="pageTitle">Scan out</h1><p id="pageSub"></p></div><div id="scannerState" class="scanner hide">Scanner ready</div></div>
   <div class="content">
     <div id="banner" class="hide" role="alert"></div>
-    <div class="stats" id="stats"></div>
+    <div class="stats adm" id="stats"></div>
 
     <section id="tab-scan">
       <div class="card">
@@ -175,12 +184,13 @@ body:not(.is-admin) .adm{display:none!important}
           <div class="ic"><svg class="i"><use href="#i-scan"/></svg></div>
           <h2>Scan a barcode to take 1 item</h2>
           <p>Each scan removes exactly one unit from stock.</p>
+          <div id="idleNote" class="idle hide"></div>
           <input id="scanInput" class="scanbox" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Scan barcode…" aria-label="Barcode input">
           <div id="scanResult" class="result" role="status" aria-live="polite"></div>
         </div>
         <div class="hint">Keep the cursor in the box. A USB or Bluetooth scanner types the code and presses Enter automatically. You can also type a code by hand.</div>
       </div>
-      <div class="card"><div class="hd"><h2>Recent scans</h2></div><div id="recent" class="scroll"></div></div>
+      <div class="card"><div class="hd"><h2 id="recentTitle">Recent scans</h2></div><div id="recent" class="scroll"></div></div>
     </section>
 
     <section id="tab-stock" class="hide">
@@ -222,6 +232,21 @@ body:not(.is-admin) .adm{display:none!important}
       </div>
     </section>
 
+    <section id="tab-users" class="hide">
+      <div class="card">
+        <div class="hd"><div><h2>Add a staff user</h2><p>Username = 3 letters + 3 numbers (e.g. ABC123). PIN = 4 digits; several people may share the same PIN.</p></div></div>
+        <div class="bd">
+          <form id="userForm" class="row">
+            <div><label for="uName">Username</label><input id="uName" type="text" class="mono" maxlength="6" pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123" required autocomplete="off" style="text-transform:uppercase"></div>
+            <div style="flex:2"><label for="uFull">Full name</label><input id="uFull" type="text" placeholder="Jane Smith" required autocomplete="off"></div>
+            <div><label for="uPin">PIN</label><input id="uPin" type="text" class="mono" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="4 digits" required autocomplete="off"></div>
+            <div style="flex:0 0 auto"><button class="btn" type="submit"><svg class="i"><use href="#i-plus"/></svg>Add user</button></div>
+          </form>
+        </div>
+      </div>
+      <div class="card"><div class="hd"><h2>Staff users</h2></div><div class="scroll" id="usersTable"></div></div>
+    </section>
+
     <section id="tab-log" class="hide">
       <div class="card"><div class="hd"><h2>History</h2></div><div class="scroll" id="logTable"></div></div>
     </section>
@@ -249,7 +274,8 @@ const ico=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
 const $=id=>document.getElementById(id);
 
 // ---------- state ----------
-let sb=null,role=null,userEmail="",items=[],tab="scan";
+let sb=null,role=null,userEmail="",items=[],users=[],tab="scan",staff=null,idleTimer=null,idleLeft=0;
+const CFG=window.INVENTORY_CONFIG||{},IDLE_SECONDS=CFG.IDLE_SECONDS||60;
 const isOut=i=>i.qty<=0;
 const isLow=i=>i.qty<=0||i.qty*4<=i.baseline;
 const fmt=t=>new Date(t).toLocaleString([],{dateStyle:"medium",timeStyle:"short"});
@@ -260,33 +286,71 @@ function banner(msg){const b=$("banner");b.textContent=msg||"";b.classList.toggl
 function authView(html){$("auth").classList.remove("hide");$("authBox").innerHTML=`<div class="brand"><div class="logo"><svg class="i" style="stroke:#fff"><use href="#i-box"/></svg></div><div>Stock Inventory<small style="color:#64748b">Barcode tracking</small></div></div>`+html}
 function hideAuth(){$("auth").classList.add("hide")}
 function showSetup(){authView(`<h2>Almost there</h2><p>The online database is not connected yet. Follow <b>SETUP.md</b> in the repository, then put your Supabase URL and key into <code>config.js</code>.</p>`)}
-function showLogin(msg,em){
-  authView(`<h2>Sign in</h2><p>Use the account your administrator created for you.</p>${msg?`<div class="autherr">${esc(msg)}</div>`:""}
-  <form id="loginForm"><div class="f"><label for="le">Email</label><input id="le" type="email" autocomplete="username" required value="${esc(em||"")}" style="height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;width:100%;font:inherit"></div>
-  <div class="f"><label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password" required style="height:40px;padding:0 12px;border:1px solid #cbd5e1;border-radius:9px;width:100%;font:inherit"></div>
-  <button class="btn" type="submit">Sign in</button></form>`);
-  $("loginForm").onsubmit=async e=>{
-    e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
-    try{const {data,error}=await sb.auth.signInWithPassword({email:$("le").value.trim(),password:$("lp").value});
-      if(error)throw error;await start(data.session)}
-    catch(x){showLogin(/invalid/i.test(x.message)?"Wrong email or password.":errText(x),$("le").value)}
-  };
+function showLogin(msg,em,mode){
+  mode=mode||"staff";
+  const err=msg?`<div class="autherr">${esc(msg)}</div>`:"";
+  const tabs=`<div class="tabs2"><button type="button" data-m="staff" class="${mode==="staff"?"on":""}">Staff</button><button type="button" data-m="admin" class="${mode==="admin"?"on":""}">Administrator</button></div>`;
+  if(mode==="staff"){
+    authView(`<h2>Staff sign-in</h2><p>Enter your username and PIN, then scan what you take.</p>${tabs}${err}
+    <form id="loginForm"><div class="f"><label for="lu">Username</label><input id="lu" class="mono" type="text" maxlength="6" pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123" autocomplete="off" autocapitalize="characters" required value="${esc(em||"")}"></div>
+    <div class="f"><label for="lp">PIN</label><input id="lp" class="mono" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••" autocomplete="off" required></div>
+    <button class="btn" type="submit">Sign in</button></form>`);
+    $(em?"lp":"lu").focus();
+    $("loginForm").onsubmit=async e=>{
+      e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
+      const u=$("lu").value.trim().toUpperCase(),p=$("lp").value;
+      try{
+        const {data,error}=await sb.rpc("check_login",{p_username:u,p_pin:p});if(error)throw error;
+        if(data.status==="locked")return showLogin("Too many wrong PINs. This username is locked for 15 minutes – ask an administrator to reset it.",u);
+        if(data.status!=="ok")return showLogin("Wrong username or PIN.",u);
+        startStaff({username:data.username,name:data.name,pin:p});
+      }catch(x){showLogin(errText(x),u)}
+    };
+  }else{
+    authView(`<h2>Administrator sign-in</h2><p>Use your email and password.</p>${tabs}${err}
+    <form id="loginForm"><div class="f"><label for="le">Email</label><input id="le" type="email" autocomplete="username" required value="${esc(em||"")}"></div>
+    <div class="f"><label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password" required></div>
+    <button class="btn" type="submit">Sign in</button></form>`);
+    $("loginForm").onsubmit=async e=>{
+      e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
+      try{const {data,error}=await sb.auth.signInWithPassword({email:$("le").value.trim(),password:$("lp").value});
+        if(error)throw error;await start(data.session)}
+      catch(x){showLogin(/invalid/i.test(x.message)?"Wrong email or password.":errText(x),$("le").value,"admin")}
+    };
+  }
+  document.querySelectorAll(".tabs2 button").forEach(b=>b.onclick=()=>showLogin("","",b.dataset.m));
 }
-$("signOut").onclick=async()=>{await sb.auth.signOut();location.reload()};
+$("signOut").onclick=async()=>{if(staff){staffOut()}else{await sb.auth.signOut();location.reload()}};
+
+// ---------- staff session (username + PIN, auto sign-out when idle) ----------
+function startStaff(st){
+  staff=st;role="user";userEmail=st.username;
+  document.body.classList.remove("is-admin");
+  $("whoRole").textContent=st.name;$("whoEmail").textContent=st.username;
+  hideAuth();$("scanResult").className="result";$("scanResult").innerHTML="";
+  show("scan");bumpIdle();
+}
+function staffOut(msg){clearInterval(idleTimer);staff=null;role=null;showLogin(msg||"")}
+function bumpIdle(){
+  if(!staff)return;idleLeft=IDLE_SECONDS;clearInterval(idleTimer);const n=$("idleNote");n.classList.remove("hide");
+  const tick=()=>{n.textContent=`Signed in as ${staff.username} · auto sign-out in ${idleLeft}s`;if(idleLeft--<=0)staffOut("Signed out after inactivity.")};
+  tick();idleTimer=setInterval(tick,1000);
+}
 
 async function start(session){
   userEmail=session.user.email;
   const {data,error}=await sb.from("user_roles").select("role").maybeSingle();
   if(error){authView(`<h2>Connection problem</h2><div class="autherr">${esc(errText(error))}</div><button class="btn" onclick="location.reload()">Try again</button>`);return}
-  if(!data){authView(`<h2>No access yet</h2><p>You are signed in as <b>${esc(userEmail)}</b>, but this account has not been given a role. Ask the administrator to add you.</p><button class="btn" id="noAccOut">Sign out</button>`);$("noAccOut").onclick=()=>$("signOut").click();return}
+  if(!data){authView(`<h2>Not an administrator</h2><p><b>${esc(userEmail)}</b> is not an administrator account. Staff should sign in with their username and PIN.</p><button class="btn" id="noAccOut">Sign out</button>`);$("noAccOut").onclick=async()=>{await sb.auth.signOut();location.reload()};return}
   role=data.role;document.body.classList.toggle("is-admin",role==="admin");
-  $("whoRole").textContent=role==="admin"?"Administrator":"Scanner";$("whoEmail").textContent=userEmail;
-  hideAuth();await refreshItems();show("scan");
-  setInterval(()=>{if(!document.hidden)refreshItems().then(()=>{if(tab!=="scan")render()})},30000);
+  $("whoRole").textContent="Administrator";$("whoEmail").textContent=userEmail;
+  hideAuth();$("idleNote").classList.add("hide");await refreshItems();show("scan");
+  setInterval(()=>{if(!document.hidden&&role==="admin")refreshItems().then(()=>{if(tab!=="scan")render()})},30000);
 }
 
 // ---------- data ----------
 async function refreshItems(){
+  if(role!=="admin")return true;
   const {data,error}=await sb.from("items").select("*").order("name");
   if(error){banner("Connection problem – showing the last known stock. "+errText(error));return false}
   items=data;banner("");updateBadge();renderStats();return true;
@@ -295,14 +359,14 @@ const byId=id=>items.find(i=>i.id===id);
 async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data}
 
 // ---------- tabs ----------
-const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Inventory","All items, barcodes and stock levels"],add:["Add item","Create new items or receive stock"],order:["Order list","Items that need to be reordered"],log:["History","Every scan, restock and correction"]};
+const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Inventory","All items, barcodes and stock levels"],add:["Add item","Create new items or receive stock"],order:["Order list","Items that need to be reordered"],users:["Staff users","Manage usernames and PINs for people who scan items"],log:["History","Every scan, restock and correction – and who did it"]};
 function show(t){
-  if((t==="add"||t==="order")&&role!=="admin")t="scan";
+  if(t!=="scan"&&role!=="admin")t="scan";
   tab=t;document.querySelectorAll(".content>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("pageTitle").textContent=TITLES[t][0];$("pageSub").textContent=TITLES[t][1];
   $("scannerState").classList.toggle("hide",t!=="scan");
-  render();refreshItems().then(ok=>{if(ok&&tab===t)render()});if(t==="scan")focusScan()}
+  render();if(role==="admin")refreshItems().then(ok=>{if(ok&&tab===t)render()});if(t==="scan")focusScan()}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
 
 // ---------- scan ----------
@@ -314,24 +378,32 @@ scanInput.addEventListener("blur",()=>{scState.classList.remove("ready");scState
 document.addEventListener("click",e=>{if(tab==="scan"&&!e.target.closest("button,a,input"))focusScan()});
 scanInput.addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;e.preventDefault();
-  const c=scanInput.value.trim();scanInput.value="";if(!c)return;
+  const c=scanInput.value.trim();scanInput.value="";if(!c)return;bumpIdle();
   scanQueue=scanQueue.then(()=>takeOne(c));      // scans are processed one at a time, in order
 });
 async function takeOne(c){
   let r;
-  try{r=await rpc("take_one",{p_barcode:c})}
+  try{r=staff?await rpc("take_one",{p_username:staff.username,p_pin:staff.pin,p_barcode:c}):await rpc("admin_take_one",{p_barcode:c})}
   catch(x){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Not recorded</div><div>${esc(errText(x))}</div><div>Scan again once the connection is back.</div>`;return}
+  if(r.status==="bad"||r.status==="locked")return staffOut("Your sign-in is no longer valid. Please sign in again.");
   if(r.status==="unknown"){scanResult.className="result err";scanResult.innerHTML=`<div class="nm">Unknown barcode</div><div>${esc(c)}</div>`;return}
   if(r.status==="out"){scanResult.className="result low";scanResult.innerHTML=`<div class="nm">${esc(r.name)}</div><div>Out of stock – nothing taken.</div>`;return}
   const low=r.qty<=0||r.qty*4<=r.baseline;
   scanResult.className="result "+(low?"low":"ok");
   scanResult.innerHTML=`<div class="nm">${esc(r.name)} – 1 taken</div><div class="big">${r.qty}</div><div>remaining</div>${low?'<span class="warn">LOW STOCK – ORDER NEEDED</span>':""}`;
-  await refreshItems();renderRecent();
+  await refreshItems();renderRecent();bumpIdle();
 }
 async function renderRecent(){
-  const {data,error}=await sb.from("log").select("*").eq("type","take").order("id",{ascending:false}).limit(8);
-  if(error)return;
-  $("recent").innerHTML=data.length?`<table><thead><tr><th>When</th><th>Item</th><th>Barcode</th><th>By</th><th>Left</th></tr></thead><tbody>${data.map(l=>`<tr><td>${fmt(l.t)}</td><td class="name">${esc(l.name)}</td><td>${esc(l.barcode)}</td><td>${esc(l.by_email||"")}</td><td class="qty">${l.after}</td></tr>`).join("")}</tbody></table>`:empty("No scans yet.");
+  let rows;
+  if(staff){
+    const r=await sb.rpc("my_recent",{p_username:staff.username,p_pin:staff.pin});
+    if(r.error)return;if(r.data.status!=="ok")return staffOut("Your sign-in is no longer valid. Please sign in again.");
+    rows=r.data.rows;
+  }else{
+    const {data,error}=await sb.from("log").select("*").eq("type","take").order("id",{ascending:false}).limit(8);
+    if(error)return;rows=data;
+  }
+  $("recent").innerHTML=rows.length?`<table><thead><tr><th>When</th><th>Item</th><th>Barcode</th>${staff?"":"<th>By</th>"}<th>Left</th></tr></thead><tbody>${rows.map(l=>`<tr><td>${fmt(l.t)}</td><td class="name">${esc(l.name)}</td><td>${esc(l.barcode)}</td>${staff?"":`<td>${esc(l.by_user||"")}</td>`}<td class="qty">${l.after}</td></tr>`).join("")}</tbody></table>`:empty(staff?"You haven't scanned anything yet.":"No scans yet.");
 }
 
 // ---------- rendering ----------
@@ -365,15 +437,46 @@ const LOGTYPES={take:"Taken","new item":"New item",restock:"Restock",correction:
 async function renderLog(){
   const {data,error}=await sb.from("log").select("*").order("id",{ascending:false}).limit(300);
   if(error){banner(errText(error));return}
-  $("logTable").innerHTML=data.length?`<table><thead><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th><th>By</th></tr></thead><tbody>${data.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(LOGTYPES[l.type]||l.type)}</td><td class="name">${esc(l.name||"")}</td><td style="color:${l.delta<0?"var(--red)":"var(--green)"};font-weight:600">${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td><td>${esc(l.by_email||"")}</td></tr>`).join("")}</tbody></table>`:empty("No activity yet.");
+  $("logTable").innerHTML=data.length?`<table><thead><tr><th>When</th><th>Action</th><th>Item</th><th>Change</th><th>Qty after</th><th>By</th></tr></thead><tbody>${data.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(LOGTYPES[l.type]||l.type)}</td><td class="name">${esc(l.name||"")}</td><td style="color:${l.delta<0?"var(--red)":"var(--green)"};font-weight:600">${l.delta>0?"+":""}${l.delta}</td><td>${l.after}</td><td>${esc(l.by_user||"")}</td></tr>`).join("")}</tbody></table>`:empty("No activity yet.");
 }
 function updateBadge(){const n=lowItems().length,b=$("lowBadge");b.textContent=n;b.classList.toggle("hide",!n)}
 function render(){
   $("savedNames").innerHTML=items.map(i=>`<option value="${esc(i.name)}">`).join("");
   updateBadge();renderStats();
-  if(tab==="scan")renderRecent();else if(tab==="stock")renderStock();else if(tab==="order")renderOrder();else if(tab==="log")renderLog();
+  if(tab==="scan")renderRecent();else if(tab==="stock")renderStock();else if(tab==="order")renderOrder();else if(tab==="users")renderUsers();else if(tab==="log")renderLog();
 }
 $("filter").oninput=renderStock;
+
+// ---------- staff users (admin) ----------
+async function renderUsers(){
+  const {data,error}=await sb.from("app_users").select("username,full_name,active,locked_until,created_at").order("username");
+  if(error){banner(errText(error));return}
+  users=data;
+  $("usersTable").innerHTML=users.length?`<table><thead><tr><th>Username</th><th>Name</th><th>Status</th><th></th></tr></thead><tbody>${users.map(u=>{
+    const locked=u.locked_until&&new Date(u.locked_until)>new Date();
+    return `<tr><td class="mono"><b>${esc(u.username)}</b></td><td class="name">${esc(u.full_name)}</td>
+    <td>${!u.active?'<span class="pill out">Inactive</span>':locked?'<span class="pill low">Locked</span>':'<span class="pill ok">Active</span>'}</td>
+    <td><div class="acts"><button class="btn sm sec" data-ua="pin" data-u="${esc(u.username)}">Reset PIN${locked?" / unlock":""}</button>
+    <button class="btn sm sec" data-ua="name" data-u="${esc(u.username)}">Rename</button>
+    <button class="btn sm ${u.active?"danger":""}" data-ua="${u.active?"off":"on"}" data-u="${esc(u.username)}">${u.active?"Deactivate":"Reactivate"}</button></div></td></tr>`}).join("")}</tbody></table><div class="hint">Deactivating blocks sign-in but keeps that person's history. After 5 wrong PINs a username is locked for 15 minutes.</div>`:empty("No staff users yet – add the first one above.");
+}
+$("userForm").onsubmit=async e=>{
+  e.preventDefault();const btn=e.target.querySelector("button");btn.disabled=true;
+  try{await rpc("create_app_user",{p_username:$("uName").value.trim(),p_name:$("uFull").value.trim(),p_pin:$("uPin").value.trim()});
+    e.target.reset();banner("");await renderUsers();$("uName").focus()}
+  catch(x){banner("Not saved: "+errText(x))}
+  btn.disabled=false;
+};
+$("usersTable").onclick=async e=>{
+  const b=e.target.closest("button[data-ua]");if(!b)return;const u=b.dataset.u,a=b.dataset.ua;
+  try{
+    if(a==="pin"){const p=(prompt(`New 4-digit PIN for ${u}:`)||"").trim();if(!p)return;await rpc("set_user_pin",{p_username:u,p_pin:p})}
+    else if(a==="name"){const cur=users.find(x=>x.username===u);const n=(prompt(`Full name for ${u}:`,cur?cur.full_name:"")||"").trim();if(!n)return;await rpc("set_user_name",{p_username:u,p_name:n})}
+    else if(a==="off"){if(!confirm(`Deactivate ${u}? They will no longer be able to sign in.`))return;await rpc("set_user_active",{p_username:u,p_active:false})}
+    else if(a==="on")await rpc("set_user_active",{p_username:u,p_active:true});
+    banner("");await renderUsers();
+  }catch(x){banner("Not saved: "+errText(x))}
+};
 
 // ---------- add / receive (admin) ----------
 $("addForm").onsubmit=async e=>{
@@ -431,7 +534,7 @@ $("exportLog").onclick=async()=>{
   let all=[],from=0;
   for(;;){const {data,error}=await sb.from("log").select("*").order("id").range(from,from+999);
     if(error)return banner(errText(error));all=all.concat(data);if(data.length<1000)break;from+=1000}
-  download("inventory-history",all,[["t","When"],["type","Action"],["name","Item"],["barcode","Barcode"],["delta","Change"],["after","Qty after"],["by_email","By"]]);
+  download("inventory-history",all,[["t","When"],["type","Action"],["name","Item"],["barcode","Barcode"],["delta","Change"],["after","Qty after"],["by_user","By"]]);
 };
 
 // ---------- start ----------
@@ -441,6 +544,7 @@ $("exportLog").onclick=async()=>{
   sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
   const {data:{session}}=await sb.auth.getSession();
   if(session)await start(session);else showLogin();
+  document.addEventListener("keydown",bumpIdle);document.addEventListener("click",bumpIdle);
 })();
 </script>
 </body>
