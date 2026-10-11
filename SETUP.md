@@ -10,8 +10,11 @@
 Administrators sign in with an email and password and can add items, restock, print labels and the
 order list, manage staff users and see the full history.
 
-1. **Authentication → Sign In / Providers → Email** → switch **off** "Allow new users to sign up" and save.
-   (Otherwise anyone who finds the site could create an account.)
+1. **Authentication → Sign In / Providers**:
+   * Keep the **Email** provider **enabled** (open *Email* and make sure "Enable Email provider" is on –
+     if it is off you will get the error "Email logins are disabled").
+   * Turn **off** "Allow new users to sign up" (in the *User Signups* section). This only stops strangers
+     creating accounts; you can still add users yourself in the next step.
 2. **Authentication → Users → Add user → Create new user.** Enter an email and password and tick
    **Auto Confirm User**. Repeat for each administrator.
 3. In **SQL Editor**, make each of them an administrator (replace the email; run once per admin):
