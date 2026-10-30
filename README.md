@@ -9,5 +9,7 @@ computer sees the same stock. Admins sign in with email + password; staff sign i
 
 * `index.html` – the app (hosted on Vercel as a static site)
 * `config.js` – your Supabase URL and public key
-* `supabase/schema.sql` – database tables, access rules and functions
+* `uniforms.js` – the Uniform Supplies tab (stock per line of business, employees, assignments, reports)
+* `supabase/schema.sql` – office supplies + sign-in: tables, access rules and functions
+* `supabase/uniforms.sql` – uniform tables and functions (run after schema.sql)
 * **`SETUP.md` – one-time setup steps**

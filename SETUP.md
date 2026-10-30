@@ -27,6 +27,10 @@ select id, 'admin' from auth.users where email = 'you@example.com';
 To add another administrator later, repeat steps 2 and 3. To remove one, delete the user under
 Authentication → Users.
 
+## 2b. Uniform Supplies tables (needed for the Uniform Supplies tab)
+In **SQL Editor → New query**, paste the entire contents of `supabase/uniforms.sql` and click **Run**.
+It is safe to run more than once. (Without it the Uniform Supplies tab shows a "one more setup step" message.)
+
 ## 3. Connect the app
 **Project Settings → API**: copy the **Project URL** and the **anon / public** key into `config.js`,
 commit, and push. Vercel redeploys automatically. (The anon key is designed to be public; the rules in
