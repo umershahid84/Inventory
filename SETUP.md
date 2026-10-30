@@ -43,7 +43,7 @@ Sign in as an administrator → **Staff users** → enter
 * **PIN** – 4 digits (several people may share the same PIN).
 
 Staff open the site, choose **Staff**, type their username and PIN, and scan. Every scan is recorded with
-their username and name (see **History**). They are signed out automatically after 60 seconds without
+their username and name (see **History**). They are signed out automatically after 3 minutes without
 scanning (change `IDLE_SECONDS` in `config.js`), so the next person must sign in as themselves.
 Staff can only scan – they cannot see or change anything else.
 

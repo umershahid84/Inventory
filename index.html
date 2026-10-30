@@ -289,7 +289,7 @@ const $=id=>document.getElementById(id);
 
 // ---------- state ----------
 let sb=null,role=null,userEmail="",items=[],users=[],tab="scan",staff=null,idleTimer=null,idleLeft=0;
-const CFG=window.INVENTORY_CONFIG||{},IDLE_SECONDS=CFG.IDLE_SECONDS||60;
+const CFG=window.INVENTORY_CONFIG||{},IDLE_SECONDS=CFG.IDLE_SECONDS||180;
 const isOut=i=>i.qty<=0;
 const isLow=i=>i.qty<=0||i.qty*4<=i.baseline;
 const fmt=t=>new Date(t).toLocaleString([],{dateStyle:"medium",timeStyle:"short"});
@@ -347,7 +347,7 @@ function startStaff(st){
 function staffOut(msg){clearInterval(idleTimer);staff=null;role=null;showLogin(msg||"")}
 function bumpIdle(){
   if(!staff)return;idleLeft=IDLE_SECONDS;clearInterval(idleTimer);const n=$("idleNote");n.classList.remove("hide");
-  const tick=()=>{n.textContent=`Signed in as ${staff.username} · auto sign-out in ${idleLeft}s`;if(idleLeft--<=0)staffOut("Signed out after inactivity.")};
+  const tick=()=>{n.textContent=`Signed in as ${staff.username} · auto sign-out in ${Math.floor(idleLeft/60)}:${String(idleLeft%60).padStart(2,"0")}`;if(idleLeft--<=0)staffOut("Signed out after inactivity.")};
   tick();idleTimer=setInterval(tick,1000);
 }
 
