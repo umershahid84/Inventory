@@ -173,9 +173,10 @@ body:not(.is-admin) .adm{display:none!important}
   <nav id="nav">
     <button data-tab="scan" class="on"><svg class="i"><use href="#i-scan"/></svg>Scan out</button>
     <button data-tab="stock" class="adm"><svg class="i"><use href="#i-layers"/></svg>Office Supplies</button>
+    <button data-tab="add" class="adm"><svg class="i"><use href="#i-plus"/></svg>Add Supplies</button>
+    <button data-tab="order" class="adm"><svg class="i"><use href="#i-cart"/></svg>Office order list <span id="lowBadge" class="badge hide">0</span></button>
     <button data-tab="uniform" class="adm"><svg class="i"><use href="#i-shirt"/></svg>Uniform Supplies</button>
-    <button data-tab="add" class="adm"><svg class="i"><use href="#i-plus"/></svg>Add item</button>
-    <button data-tab="order" class="adm"><svg class="i"><use href="#i-cart"/></svg>Order list <span id="lowBadge" class="badge hide">0</span></button>
+    <button data-tab="adduniform" class="adm"><svg class="i"><use href="#i-plus"/></svg>Add Uniform</button>
     <button data-tab="users" class="adm"><svg class="i"><use href="#i-users"/></svg>Staff users</button>
     <button data-tab="log" class="adm"><svg class="i"><use href="#i-clock"/></svg>History</button>
   </nav>
@@ -218,9 +219,11 @@ body:not(.is-admin) .adm{display:none!important}
 
     <section id="tab-uniform" class="hide"><div id="uniformBody"></div></section>
 
+    <section id="tab-adduniform" class="hide"><div id="addUniformBody"></div></section>
+
     <section id="tab-add" class="hide">
       <div class="card">
-        <div class="hd"><div><h2>New item or restock</h2><p>New items get a barcode automatically. Choose a saved name to add stock to an existing item.</p></div></div>
+        <div class="hd"><div><h2>New office supply or restock</h2><p>New items get a barcode automatically. Choose a saved name to add stock to an existing item.</p></div></div>
         <div class="bd">
           <form id="addForm" class="row">
             <div style="flex:2"><label for="addName">Item name</label>
@@ -370,15 +373,15 @@ const byId=id=>items.find(i=>i.id===id);
 async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data}
 
 // ---------- tabs ----------
-const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Office Supplies","All office supply items, barcodes and stock levels"],uniform:["Uniform Supplies","Uniform stock by line of business, and what each employee holds"],add:["Add item","Create new office supplies or receive stock"],order:["Order list","Items that need to be reordered"],users:["Staff users","Manage usernames and PINs for people who scan items"],log:["History","Every scan, restock and correction – and who did it"]};
+const TITLES={scan:["Scan out","Scan a barcode to remove one item from stock"],stock:["Office Supplies","All office supply items, barcodes and stock levels"],uniform:["Uniform Supplies","Uniform stock by line of business, and what each employee holds"],add:["Add Supplies","Create new office supplies or receive stock"],adduniform:["Add Uniform","Receive uniform stock by line of business, garment, fit and size"],order:["Office order list","Office supplies that need to be reordered"],users:["Staff users","Manage usernames and PINs for people who scan items"],log:["History","Every scan, restock and correction – and who did it"]};
 function show(t){
   if(t!=="scan"&&role!=="admin")t="scan";
   tab=t;document.querySelectorAll(".content>section").forEach(s=>s.classList.toggle("hide",s.id!=="tab-"+t));
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   $("pageTitle").textContent=TITLES[t][0];$("pageSub").textContent=TITLES[t][1];
   $("scannerState").classList.toggle("hide",t!=="scan");
-  $("stats").classList.toggle("hide",t==="uniform");
-  render();if(role==="admin")refreshItems().then(ok=>{if(ok&&tab===t)render()});if(t==="uniform")uniformEnter();if(t==="scan")focusScan()}
+  $("stats").classList.toggle("hide",t==="uniform"||t==="adduniform");
+  render();if(role==="admin")refreshItems().then(ok=>{if(ok&&tab===t)render()});if(t==="uniform")uniformEnter();if(t==="adduniform")addUniformEnter();if(t==="scan")focusScan()}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)show(b.dataset.tab)};
 
 // ---------- scan ----------

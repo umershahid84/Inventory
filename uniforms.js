@@ -80,31 +80,11 @@ function renderU(){
   const tabs=`<div class="tabs2" style="max-width:360px"><button data-uv="stock" class="${U.view==="stock"?"on":""}">Stock</button><button data-uv="emps" class="${U.view!=="stock"?"on":""}">Employees</button></div>`;
   if(U.view==="stock"){
     body.innerHTML=tabs+`
-    <div class="card"><div class="hd"><div><h2>Receive uniform stock</h2><p>Stock is kept separately for each line of business.</p></div></div>
-      <div class="bd"><form id="uStockForm" class="row">
-        <div><label for="usLine">Line of business</label><select id="usLine">${lineOptions()}</select></div>
-        ${pickerHTML("us")}
-        <div style="flex:0 0 100px;min-width:90px"><label for="usQty">Quantity</label><input id="usQty" type="number" min="1" step="1" value="1" required></div>
-        <div style="flex:0 0 auto"><button class="btn" type="submit"><svg class="i"><use href="#i-plus"/></svg>Add stock</button></div>
-      </form></div>
-      <div class="hint"><details><summary style="cursor:pointer;font-weight:600">A size is missing from the lists? Add it</summary>
-        <form id="uVarForm" class="row" style="margin-top:10px">
-          <div><label for="uvG">Garment</label><input id="uvG" type="text" list="uvGl" required placeholder="e.g. Pants"><datalist id="uvGl">${garmentList().map(g=>`<option value="${esc(g)}">`).join("")}</datalist></div>
-          <div><label for="uvF">Fit</label><select id="uvF">${FITS.map(f=>`<option>${f}</option>`).join("")}</select></div>
-          <div><label for="uvS">Size</label><input id="uvS" type="text" required placeholder="e.g. 32x30"></div>
-          <div style="flex:0 0 auto"><button class="btn sec" type="submit">Add size</button></div>
-        </form></details></div></div>
+    <div class="card"><div class="bd" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span class="mute">Received new uniforms? Add them on the <b>Add Uniform</b> tab.</span><button class="btn" id="uGoAdd"><svg class="i"><use href="#i-plus"/></svg>Add uniform stock</button></div></div>
     <div class="card"><div class="hd"><div class="acts" id="uLineFilter"></div><button class="btn sec" id="uPrintOrder"><svg class="i"><use href="#i-print"/></svg>Print uniform order list</button></div>
       <div class="scroll" id="uStockTable"></div></div>`;
-    wirePicker("us");renderUStock();
-    $("uStockForm").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;
-      try{await rpc("uniform_add_stock",{p_line:$("usLine").value,p_variant:picked("us"),p_qty:parseInt($("usQty").value,10)});
-        banner("");await reloadU();renderUStock();$("usQty").value=1;}
-      catch(x){banner("Not saved: "+errText(x))}b.disabled=false};
-    $("uVarForm").onsubmit=async e=>{e.preventDefault();
-      try{await rpc("uniform_add_variant",{p_garment:$("uvG").value,p_fit:$("uvF").value,p_size:$("uvS").value});
-        banner("");await reloadU();renderU();}
-      catch(x){banner("Not saved: "+errText(x))}};
+    renderUStock();
+    $("uGoAdd").onclick=()=>show("adduniform");
     $("uPrintOrder").onclick=printUOrder;
   }else if(U.view==="emps"){
     const f=U.empFilter;
@@ -271,4 +251,73 @@ function printCollectionList(){
   ${emps.map(e=>`<h2 style="font-size:15px;margin:18px 0 4px">${esc(e.full_name)}${e.emp_no?` (#${esc(e.emp_no)})`:""} – ${empLine(e)}</h2>
   <table><thead><tr><th>Garment</th><th>Fit</th><th>Size</th><th>Qty held</th><th>Collected</th></tr></thead><tbody>${U.open.filter(i=>i.employee_id===e.id).map(i=>{const v=vById(i.variant_id);
     return `<tr><td>${esc(v.garment)}</td><td>${esc(v.fit)}</td><td>${esc(v.size)}</td><td>${i.outstanding}</td><td>☐ ____</td></tr>`}).join("")}</tbody></table>`).join("")}</div>`);
+}
+
+
+// ---------- Add Uniform tab (receive stock by line / garment / fit / size) ----------
+const AU={line:null,garment:null,fit:null,result:""};
+async function addUniformEnter(){
+  const body=$("addUniformBody");
+  body.innerHTML=`<div class="card"><div class="bd mute">Loading…</div></div>`;
+  try{await loadU()}
+  catch(x){
+    body.innerHTML=missingTables(x)
+      ?`<div class="card"><div class="bd"><h2>One more setup step</h2><p>The uniform tables are not in your database yet. In Supabase open <b>SQL Editor → New query</b>, paste the contents of <code>supabase/uniforms.sql</code>, and click <b>Run</b>. Then reload this page.</p></div></div>`
+      :`<div class="card"><div class="bd"><div class="autherr">${esc(errText(x))}</div></div></div>`;
+    return;
+  }
+  banner("");renderAddUniform();
+}
+function renderAddUniform(){
+  const g0=garmentList();
+  AU.line=AU.line||U.lines[0].code;
+  AU.garment=g0.includes(AU.garment)?AU.garment:g0[0];
+  const fits=fitList(AU.garment);AU.fit=fits.includes(AU.fit)?AU.fit:fits[0];
+  $("addUniformBody").innerHTML=`
+  <div class="card"><div class="hd"><div><h2>Add uniform stock</h2><p>Choose the line of business, garment and fit, then enter how many you received of each size. Leave a size empty if you received none.</p></div></div>
+    <div class="bd"><div class="row">
+      <div><label for="auLine">Line of business</label><select id="auLine">${lineOptions(AU.line)}</select></div>
+      <div><label for="auG">Garment</label><select id="auG">${g0.map(g=>`<option${g===AU.garment?" selected":""}>${esc(g)}</option>`).join("")}</select></div>
+      <div><label for="auF">Fit</label><select id="auF">${fits.map(f=>`<option${f===AU.fit?" selected":""}>${esc(f)}</option>`).join("")}</select></div>
+    </div>
+    <form id="auForm"><div id="auGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin:18px 0"></div>
+      <button class="btn" type="submit"><svg class="i"><use href="#i-plus"/></svg>Save stock</button></form></div>
+    <div class="hint"><details><summary style="cursor:pointer;font-weight:600">A size is missing from the list? Add it</summary>
+      <form id="auVarForm" class="row" style="margin-top:10px">
+        <div><label for="uvG">Garment</label><input id="uvG" type="text" list="uvGl" required value="${esc(AU.garment)}"><datalist id="uvGl">${g0.map(g=>`<option value="${esc(g)}">`).join("")}</datalist></div>
+        <div><label for="uvF">Fit</label><select id="uvF">${FITS.map(f=>`<option${f===AU.fit?" selected":""}>${f}</option>`).join("")}</select></div>
+        <div><label for="uvS">Size</label><input id="uvS" type="text" required placeholder="e.g. 32x30"></div>
+        <div style="flex:0 0 auto"><button class="btn sec" type="submit">Add size</button></div></form></details></div></div>
+  <div id="auResult">${AU.result}</div>`;
+  const grid=()=>{
+    const sizes=sizeList(AU.garment,AU.fit);
+    $("auGrid").innerHTML=sizes.map(v=>{const s=U.stock.find(x=>x.line_code===AU.line&&x.variant_id===v.id);
+      return `<div><label for="aq${v.id}">${esc(v.size)}</label><input id="aq${v.id}" data-v="${v.id}" type="number" min="0" step="1" placeholder="0"><div class="mute" style="font-size:12px;margin-top:3px">in stock: ${s?s.qty:0}</div></div>`}).join("");
+  };
+  grid();
+  $("auLine").onchange=()=>{AU.line=$("auLine").value;grid()};
+  $("auG").onchange=()=>{AU.garment=$("auG").value;AU.fit=null;AU.result="";renderAddUniform()};
+  $("auF").onchange=()=>{AU.fit=$("auF").value;grid()};
+  $("auForm").onsubmit=async e=>{
+    e.preventDefault();
+    const items=[...document.querySelectorAll("#auGrid input")].map(i=>({id:+i.dataset.v,qty:parseInt(i.value,10)})).filter(x=>x.qty>0);
+    if(!items.length)return banner("Enter a quantity for at least one size.");
+    const btn=e.target.querySelector("button");btn.disabled=true;const done=[];
+    try{
+      for(const it of items){await rpc("uniform_add_stock",{p_line:AU.line,p_variant:it.id,p_qty:it.qty});done.push(it)}
+      banner("");
+    }catch(x){banner(`Not saved: ${errText(x)}${done.length?` (already saved before the error: ${done.map(d=>vById(d.id).size+" ×"+d.qty).join(", ")})`:""}`)}
+    if(done.length){
+      await loadU();
+      AU.result=`<div class="card"><div class="bd"><div class="pill ok" style="margin-bottom:8px">Saved to the database</div>
+        <p style="margin:0 0 8px">Added to <b>${esc(lineName(AU.line))}</b> – ${esc(AU.garment)} (${esc(AU.fit)}):</p>
+        <table><thead><tr><th>Size</th><th>Added</th><th>Now in stock</th></tr></thead><tbody>${done.map(d=>{const s=U.stock.find(x=>x.line_code===AU.line&&x.variant_id===d.id);
+        return `<tr><td><b>${esc(vById(d.id).size)}</b></td><td>+${d.qty}</td><td>${s?s.qty:d.qty}</td></tr>`}).join("")}</tbody></table></div></div>`;
+      renderAddUniform();
+    }else btn.disabled=false;
+  };
+  $("auVarForm").onsubmit=async e=>{e.preventDefault();
+    try{await rpc("uniform_add_variant",{p_garment:$("uvG").value,p_fit:$("uvF").value,p_size:$("uvS").value});
+      banner("");await loadU();AU.garment=$("uvG").value.trim();AU.fit=$("uvF").value;AU.result="";renderAddUniform()}
+    catch(x){banner("Not saved: "+errText(x))}};
 }
